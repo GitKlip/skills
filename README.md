@@ -28,6 +28,7 @@ Each repo names its board in `.claude/board.json`: `{"owner": "<org-or-user>", "
    simplifies, reviews, and opens a PR. Branches are `<issue>_<two_or_three_words>` (e.g. `168_llm_judge`),
    and PR titles are `<issue title> (task #<issue>)`. The script moves the issue to In review if a PR exists, otherwise to AI Blocked.
    It only takes Ready issues that have a `## Design` section.
+   Runs on `MODEL` (opus), which hands fully specified tasks to sonnet subagents.
    Limits: `MAX_ISSUES` (3), `MAX_TURNS` (300), `MAX_BUDGET_USD` (25 per issue), and it stops after 2 blocks in a row.
    Logs: `~/.local/state/build-ready-features/<repo>/`.
 3. I test and review the PR. Worktrees stay in `.claude/worktrees/issue-<n>` until I remove them.

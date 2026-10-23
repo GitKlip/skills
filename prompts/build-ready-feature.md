@@ -10,6 +10,7 @@ The loop moves the issue on the board. Never change board status yourself.
 - Follow the project's own agent docs (AGENTS.md, CLAUDE.md) wherever they differ from this prompt. That includes where plans go, how tests are run, what to check in a worktree, and any steps they require before finishing a branch.
 - The issue's `## Design` section is the agreed design. Build it. Don't redesign it.
   If it is silent or ambiguous on something, make the most conservative choice, and record it under "Decisions made without a human" in the PR.
+- Choose subagent models deliberately. Use `sonnet` for an implementer subagent whose task the plan specifies fully. Use `opus` for code review, for fixing a failure that keeps coming back, and for any task that turns out to be ambiguous. Keep the judgment calls in this session.
 - Stay inside the issue. Don't fix unrelated things you notice; mention them in the PR instead.
 - Never merge, never push to the default branch, and never force-push.
 

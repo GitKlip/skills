@@ -10,10 +10,12 @@
 #   build-ready-features 142         build just that issue (it must be Ready, with a design)
 #
 # Settings (environment):
+#   MODEL=opus     (the orchestrating session; it hands well-specified tasks to sonnet subagents)
 #   MAX_ISSUES=3   MAX_TURNS=300   MAX_BUDGET_USD=25   PERMISSION_MODE=auto
 #   MAX_CONSECUTIVE_BLOCKED=2   (stop early: repeated blocks usually mean a setup problem)
 set -euo pipefail
 
+MODEL="${MODEL:-opus}"
 MAX_ISSUES="${MAX_ISSUES:-3}"
 MAX_TURNS="${MAX_TURNS:-300}"
 MAX_BUDGET_USD="${MAX_BUDGET_USD:-25}"
@@ -57,6 +59,7 @@ while [ "$built" -lt "$MAX_ISSUES" ]; do
 
   claude -p "Implement issue #$issue." \
     --worktree "issue-$issue" \
+    --model "$MODEL" \
     --append-system-prompt-file "$prompt_file" \
     --permission-mode "$PERMISSION_MODE" \
     --max-turns "$MAX_TURNS" \
