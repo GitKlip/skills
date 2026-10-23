@@ -51,12 +51,11 @@ next_issue() {
 built=0; blocked_in_a_row=0
 while [ "$built" -lt "$MAX_ISSUES" ]; do
   issue="$(next_issue "${1:-}")" || { echo "No Ready issue with a design left."; break; }
-  branch="ralph/issue-$issue"
   log="$log_dir/issue-$issue-$(date +%Y%m%d-%H%M%S).jsonl"
   echo "▶ #$issue — log: $log"
   "$board" set "$issue" "In progress"
 
-  claude -p "Implement issue #$issue. Branch name: $branch." \
+  claude -p "Implement issue #$issue." \
     --worktree "issue-$issue" \
     --append-system-prompt-file "$prompt_file" \
     --permission-mode "$PERMISSION_MODE" \
@@ -76,7 +75,9 @@ for line in open(sys.argv[1]):
         last = last[-1] if last else ""
 print(last)' "$log")"
 
-  pr="$(gh pr list --head "$branch" --state open --json url -q '.[0].url')"
+  # The session names its branch <issue>_<two_or_three_words>, e.g. 168_llm_judge
+  pr="$(gh pr list --state open --limit 100 --json url,headRefName \
+    -q "[.[] | select(.headRefName | startswith(\"${issue}_\"))][0].url // empty")"
   if [ -n "$pr" ]; then
     "$board" set "$issue" "In review"
     echo "✔ #$issue → $pr"

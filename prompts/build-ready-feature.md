@@ -6,7 +6,7 @@ The loop moves the issue on the board. Never change board status yourself.
 
 ## Rules
 
-- You are already in a fresh git worktree. First rename its branch: `git branch -m <branch>`, using the branch name given below.
+- You are already in a fresh git worktree. First rename its branch to the issue number, an underscore, and 2–3 lowercase words naming the task's concept, joined by underscores. For example, issue #168 "LLM scene adjudication and grounding judge" becomes `git branch -m 168_llm_judge`. The loop finds your PR by the `<n>_` prefix, so keep it exact.
 - Follow the project's own agent docs (AGENTS.md, CLAUDE.md) wherever they differ from this prompt. That includes where plans go, how tests are run, what to check in a worktree, and any steps they require before finishing a branch.
 - The issue's `## Design` section is the agreed design. Build it. Don't redesign it.
   If it is silent or ambiguous on something, make the most conservative choice, and record it under "Decisions made without a human" in the PR.
@@ -22,6 +22,7 @@ The loop moves the issue on the board. Never change board status yourself.
 5. Polish: run the `code-simplification` skill on the changed code, then the `requesting-code-review` skill. Fix real findings, then run validation again.
 6. If the change is visible in a UI and the project's docs say how to check it visually, do that check.
 7. Finish with the `finishing-a-development-branch` skill, choosing "push and create a PR" without showing its menu.
+   The PR title is the issue title followed by ` (task #<n>)`, for example `[CORE] LLM scene adjudication and grounding judge (task #168)`.
    The PR body must have:
    - `Closes #<n>`
    - a summary of what changed
