@@ -18,11 +18,15 @@ link.sh                  # links skills/* and bin/* for live editing
 Uses a GitHub Projects board with the columns Backlog, Ready, In progress, AI Blocked, In review, Done.
 Each repo names its board in `.claude/board.json`: `{"owner": "<org-or-user>", "project": <number>}`.
 
+0. **`/create-story`**, in Claude Code. Files an issue in Backlog: a plain-language top half (user story, intent,
+   acceptance criteria), a `---` rule, then implementer Details. `story.py lint` enforces the format.
+   Area tags for each repo live under `tags` in `.claude/board.json`.
 1. **`/refine-next [issue]`**, in Claude Code, with me. It interviews me about the top Backlog issue, writes a
    `## Design` section into the issue, and moves it to Ready.
 2. **`build-ready-features [issue]`**, in a terminal, unattended. It is a Ralph loop: one fresh `claude -p`
    session per issue, each in its own worktree. It plans, builds with TDD and subagents, validates,
-   simplifies, reviews, and opens a PR. The script moves the issue to In review if a PR exists, otherwise to AI Blocked.
+   simplifies, reviews, and opens a PR. Branches are `<issue>_<two_or_three_words>` (e.g. `168_llm_judge`),
+   and PR titles are `<issue title> (task #<issue>)`. The script moves the issue to In review if a PR exists, otherwise to AI Blocked.
    It only takes Ready issues that have a `## Design` section.
    Limits: `MAX_ISSUES` (3), `MAX_TURNS` (300), `MAX_BUDGET_USD` (25 per issue), and it stops after 2 blocks in a row.
    Logs: `~/.local/state/build-ready-features/<repo>/`.
