@@ -28,7 +28,8 @@ Form a recommendation before asking anything. Never ask what the code or docs al
 
 Load the `grilling` and `domain-modeling` skills. That pair is what `/grill-with-docs` runs, and it can't be called from another skill because it is user-only.
 `grilling` drives the interview. `domain-modeling` challenges fuzzy terms and records them as they are resolved: terms go in `GLOSSARY.md`, and the rare hard-to-reverse decision goes in an ADR.
-If the project's agent docs name their own decision log (for example `DECISIONS.md`), offer decisions there, in its format, instead of creating `docs/adr/`. Tell the user which doc files you changed. They are left uncommitted.
+Follow the project's agent docs on where decisions and terms go and how ADRs are numbered and titled. Without such guidance, use `domain-modeling`'s defaults (`docs/adr/`, `GLOSSARY.md`).
+Record in the issue's design which ADRs this refinement created, so the implementer reads them. Tell the user which doc files you changed. They are left uncommitted.
 
 Steer the questions toward what an unattended implementer would otherwise have to guess:
 
