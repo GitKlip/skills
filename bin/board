@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+"""GitHub Projects board helper shared by /refine-next and build-ready-features.
+
+The board comes from .claude/board.json at the repo root: {"owner": "...", "project": 6}.
+Only issues from the current repo are listed. This uses GraphQL directly because
+`gh project item-list` returned no items for a board that has them.
+
+  board list <status>         issues in that column, in board order (number, has-design, title)
+  board next-ready            first Ready issue whose body has a "## Design" section
+  board status <issue>        the issue's current column
+  board set <issue> <status>  move the issue to that column
+"""
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+DESIGN_HEADING = "## Design"
+
+ITEMS_QUERY = """
+query($owner: String!, $number: Int!, $after: String) {
+  repositoryOwner(login: $owner) {
+    ... on ProjectV2Owner {
+      projectV2(number: $number) {
+        id
+        field(name: "Status") { ... on ProjectV2SingleSelectField { id options { id name } } }
+        items(first: 100, after: $after, orderBy: {field: POSITION, direction: ASC}) {
+          pageInfo { hasNextPage endCursor }
+          nodes {
+            id
+            fieldValueByName(name: "Status") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
+            content { ... on Issue { number title body state repository { nameWithOwner } } }
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
+SET_STATUS = """
+mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
+  updateProjectV2ItemFieldValue(input: {
+    projectId: $project, itemId: $item, fieldId: $field, value: {singleSelectOptionId: $option}
+  }) { projectV2Item { id } }
+}
+"""
+
+
+def run(*args):
+    return subprocess.run(args, check=True, capture_output=True, text=True).stdout.strip()
+
+
+def graphql(query, **variables):
+    args = ["gh", "api", "graphql", "-f", f"query={query}"]
+    for key, value in variables.items():
+        if value is not None:
+            args += ["-F" if isinstance(value, int) else "-f", f"{key}={value}"]
+    return json.loads(run(*args))["data"]
+
+
+def config():
+    root = Path(run("git", "rev-parse", "--show-toplevel"))
+    path = root / ".claude" / "board.json"
+    if not path.exists():
+        sys.exit(f'board: missing {path} — create it as {{"owner": "<org-or-user>", "project": <number>}}')
+    return json.loads(path.read_text())
+
+
+def load_board():
+    cfg = config()
+    repo = run("gh", "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner")
+    items, after, project = [], None, None
+    while True:
+        project = graphql(ITEMS_QUERY, owner=cfg["owner"], number=int(cfg["project"]), after=after)[
+            "repositoryOwner"]["projectV2"]
+        page = project["items"]
+        for node in page["nodes"]:
+            issue = node.get("content") or {}
+            if issue.get("repository", {}).get("nameWithOwner") != repo or issue.get("state") != "OPEN":
+                continue
+            items.append({
+                "item_id": node["id"],
+                "status": (node.get("fieldValueByName") or {}).get("name"),
+                "number": issue["number"],
+                "title": issue["title"],
+                "has_design": DESIGN_HEADING in (issue.get("body") or ""),
+            })
+        if not page["pageInfo"]["hasNextPage"]:
+            break
+        after = page["pageInfo"]["endCursor"]
+    return project, items
+
+
+def option_for(project, status):
+    for option in project["field"]["options"]:
+        if option["name"].lower() == status.lower():
+            return option["id"]
+    names = ", ".join(o["name"] for o in project["field"]["options"])
+    sys.exit(f"board: no status '{status}' (have: {names})")
+
+
+def find(items, number):
+    for item in items:
+        if item["number"] == number:
+            return item
+    sys.exit(f"board: issue #{number} is not on the board")
+
+
+def main(argv):
+    if not argv or argv[0] in ("-h", "--help"):
+        print(__doc__.strip())
+        return
+    command, rest = argv[0], argv[1:]
+    project, items = load_board()
+
+    if command == "list" and len(rest) == 1:
+        option_for(project, rest[0])  # validates the name
+        for item in items:
+            if (item["status"] or "").lower() == rest[0].lower():
+                print(f"{item['number']}\t{'design' if item['has_design'] else '-'}\t{item['title']}")
+    elif command == "next-ready" and not rest:
+        for item in items:
+            if (item["status"] or "").lower() == "ready" and item["has_design"]:
+                print(item["number"])
+                return
+        sys.exit(1)
+    elif command == "status" and len(rest) == 1:
+        print(find(items, int(rest[0]))["status"])
+    elif command == "set" and len(rest) == 2:
+        item = find(items, int(rest[0]))
+        graphql(SET_STATUS, project=project["id"], item=item["item_id"],
+                field=project["field"]["id"], option=option_for(project, rest[1]))
+        print(f"#{item['number']} → {rest[1]}")
+    else:
+        sys.exit(__doc__.strip())
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

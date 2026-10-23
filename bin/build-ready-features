@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# Ralph loop: build each Ready issue that has a "## Design" section, one fresh
+# Claude Code session per issue, each in its own worktree, ending in a PR.
+#
+# Run from the main checkout of a repo that has .claude/board.json.
+# The loop owns the board: In progress while building, then In review if a PR
+# exists for the branch, otherwise AI Blocked.
+#
+#   build-ready-features             build up to MAX_ISSUES issues
+#   build-ready-features 142         build just that issue (it must be Ready, with a design)
+#
+# Settings (environment):
+#   MAX_ISSUES=3   MAX_TURNS=300   MAX_BUDGET_USD=25   PERMISSION_MODE=auto
+#   MAX_CONSECUTIVE_BLOCKED=2   (stop early: repeated blocks usually mean a setup problem)
+set -euo pipefail
+
+MAX_ISSUES="${MAX_ISSUES:-3}"
+MAX_TURNS="${MAX_TURNS:-300}"
+MAX_BUDGET_USD="${MAX_BUDGET_USD:-25}"
+PERMISSION_MODE="${PERMISSION_MODE:-auto}"
+MAX_CONSECUTIVE_BLOCKED="${MAX_CONSECUTIVE_BLOCKED:-2}"
+
+here="$(cd "$(dirname "$(realpath "$0")")" && pwd)"
+board="$here/board"
+prompt_file="$here/../prompts/build-ready-feature.md"
+
+root="$(git rev-parse --show-toplevel)"
+cd "$root"
+if [ "$(git rev-parse --git-common-dir)" != "$(git rev-parse --git-dir)" ]; then
+  echo "Run this from the main checkout, not a worktree." >&2; exit 1
+fi
+default_branch="$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)"
+if [ "$(git branch --show-current)" != "$default_branch" ]; then
+  echo "Check out $default_branch first; each worktree branches from it." >&2; exit 1
+fi
+git pull --ff-only --quiet
+
+log_dir="${XDG_STATE_HOME:-$HOME/.local/state}/build-ready-features/$(basename "$root")"
+mkdir -p "$log_dir"
+
+next_issue() {
+  if [ -n "${1:-}" ]; then
+    # Same bar as next-ready: in Ready and has a "## Design" section
+    "$board" list Ready | awk -F'\t' -v n="$1" '$1 == n && $2 == "design" { print n; found = 1 } END { exit !found }' \
+      || { echo "#$1 is not Ready with a design; run /refine-next $1 first." >&2; return 1; }
+  else
+    "$board" next-ready
+  fi
+}
+
+built=0; blocked_in_a_row=0
+while [ "$built" -lt "$MAX_ISSUES" ]; do
+  issue="$(next_issue "${1:-}")" || { echo "No Ready issue with a design left."; break; }
+  branch="ralph/issue-$issue"
+  log="$log_dir/issue-$issue-$(date +%Y%m%d-%H%M%S).jsonl"
+  echo "▶ #$issue — log: $log"
+  "$board" set "$issue" "In progress"
+
+  claude -p "Implement issue #$issue. Branch name: $branch." \
+    --worktree "issue-$issue" \
+    --append-system-prompt-file "$prompt_file" \
+    --permission-mode "$PERMISSION_MODE" \
+    --max-turns "$MAX_TURNS" \
+    --max-budget-usd "$MAX_BUDGET_USD" \
+    --output-format stream-json --verbose \
+    > "$log" 2>&1 || true
+
+  result="$(python3 -c '
+import json, sys
+last = ""
+for line in open(sys.argv[1]):
+    try: event = json.loads(line)
+    except ValueError: continue
+    if event.get("type") == "result":
+        last = (event.get("result") or event.get("subtype") or "").strip().splitlines()
+        last = last[-1] if last else ""
+print(last)' "$log")"
+
+  pr="$(gh pr list --head "$branch" --state open --json url -q '.[0].url')"
+  if [ -n "$pr" ]; then
+    "$board" set "$issue" "In review"
+    echo "✔ #$issue → $pr"
+    blocked_in_a_row=0
+  else
+    "$board" set "$issue" "AI Blocked"
+    if ! gh issue view "$issue" --json comments -q '.comments[-1].body' | grep -q '^🤖 AI Blocked'; then
+      gh issue comment "$issue" --body "🤖 AI Blocked: the build run ended without a PR. Last output: \`${result:-none}\`. Log on the machine that ran it: \`$log\`" >/dev/null
+    fi
+    echo "✖ #$issue blocked: ${result:-no result}"
+    blocked_in_a_row=$((blocked_in_a_row + 1))
+    if [ "$blocked_in_a_row" -ge "$MAX_CONSECUTIVE_BLOCKED" ]; then
+      echo "Stopping: $blocked_in_a_row issues blocked in a row." >&2; break
+    fi
+  fi
+
+  built=$((built + 1))
+  [ -n "${1:-}" ] && break
+done
