@@ -23,15 +23,20 @@ Each repo names its board in `.claude/board.json`: `{"owner": "<org-or-user>", "
    Area tags for each repo live under `tags` in `.claude/board.json`.
 1. **`/refine-next [issue]`**, in Claude Code, with me. It interviews me about the top Backlog issue, writes a
    `## Design` section into the issue, and moves it to Ready.
+   When I need to see a UI or a state model before deciding, it builds a throwaway prototype on a `proto/<n>_…` branch,
+   or writes a prompt for me to paste into v0.
+   The prototype is frontend only, with dummy data.
 2. **`build-ready-features [issue]`**, in a terminal, unattended. It is a Ralph loop: one fresh `claude -p`
-   session per issue, each in its own worktree. It plans, builds with TDD and subagents, validates,
-   simplifies, reviews, and opens a PR. Branches are `<issue>_<two_or_three_words>` (e.g. `168_llm_judge`),
+   session per issue, each in its own worktree. It plans in phases and builds with TDD and subagents.
+   It validates with format, lint, types, tests and build, then checks UI changes in a browser.
+   It simplifies, runs a security review and a code review, and opens a PR with "How to test" steps.
+   Branches are `<issue>_<two_or_three_words>` (e.g. `168_llm_judge`),
    and PR titles are `<issue title> (task #<issue>)`. The script moves the issue to In review if a PR exists, otherwise to AI Blocked.
    It only takes Ready issues that have a `## Design` section.
    Runs on `MODEL` (opus), which hands fully specified tasks to sonnet subagents.
    Limits: `MAX_ISSUES` (3), `MAX_TURNS` (300), `MAX_BUDGET_USD` (25 per issue), and it stops after 2 blocks in a row.
    Logs: `~/.local/state/build-ready-features/<repo>/`.
-3. I test and review the PR. Worktrees stay in `.claude/worktrees/issue-<n>` until I remove them.
+3. I follow the PR's "How to test" steps on the preview deploy, review it, and merge. Merging is the deploy. Worktrees stay in `.claude/worktrees/issue-<n>` until I remove them.
 
 `board --help` shows the board commands both of these use.
 

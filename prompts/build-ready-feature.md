@@ -16,20 +16,26 @@ The loop moves the issue on the board. Never change board status yourself.
 
 ## Steps
 
-1. Read the issue: `gh issue view <n> --comments`.
-2. Write an implementation plan with the `writing-plans` skill. Skip its human review step and its choice of execution approach, and go straight to step 3.
+1. Read the issue: `gh issue view <n> --comments`. If its design names a **Prototype**, read it. For a branch, run `git fetch origin <branch>` first. For a v0 link, fetch the page; if you can't open it, go by the design's description of it. The prototype shows how the result should look and behave. Its code is throwaway: rebuild it properly rather than copying it.
+2. Write an implementation plan with the `writing-plans` skill. Split it into phases that can each be tested on their own, and map every acceptance criterion to the test that proves it. Skip the skill's human review step and its choice of execution approach, and go straight to step 3.
 3. Implement the plan with the `subagent-driven-development` skill. Every task follows the `tdd` skill: write a failing test, make it pass, then refactor.
-4. Run the project's full validation (the test and type-check commands its agent docs name). Everything must pass.
-5. Polish: run the `code-simplification` skill on the changed code, then the `requesting-code-review` skill. Fix real findings, then run validation again.
-6. If the change is visible in a UI and the project's docs say how to check it visually, do that check.
+4. Validate: run the project's format check, lint, type-check, tests and production build, using the commands in its agent docs or package scripts. Everything must pass.
+5. If the change is visible in a UI, run the app and check it in a browser (Playwright), the way the project's docs describe. Walk through the design's **Human test** steps yourself. Note what you saw. This check is hit and miss, so it doesn't replace the human test.
+6. Polish:
+   - Run the `code-simplification` skill on the changed code.
+   - Run the `security-review` skill on the branch. If it isn't available, have the code reviewer cover security: auth and ownership checks, input validation, secrets, and injection.
+   - Run the `requesting-code-review` skill.
+   - Fix the real findings, then run step 4 again.
 7. Finish with the `finishing-a-development-branch` skill, choosing "push and create a PR" without showing its menu.
    The PR title is the issue title followed by ` (task #<n>)`, for example `[CORE] LLM scene adjudication and grounding judge (task #168)`.
    The PR body must have:
    - `Closes #<n>`
    - a summary of what changed
-   - test evidence: the validation commands you ran and their result
+   - test evidence: the validation commands you ran and their result, plus what the browser check showed
+   - **How to test**: the design's Human test steps, adjusted to what was actually built, for the human to run on the preview deploy
    - Decisions made without a human
    - anything left undone
+   Never deploy. Merging the PR is the human's deploy step.
 
 ## If you are blocked
 

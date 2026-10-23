@@ -48,6 +48,31 @@ The decisions are the user's. Your recommendations are proposals until the user 
 
 If the work is bigger than one reviewable PR, say so and propose a split. Either narrow this issue and file the remainder as new Backlog issues, or stop and leave the user to run `/to-tickets`.
 
+## 3a. Prototype, only when it would settle a question
+
+Offer a prototype when the interview stalls on something the user has to see: what a screen should look like, or whether a state model feels right. Skip it for anything a sentence can decide. If the user accepts, load the `prototype` skill and use its UI or logic branch.
+
+For a UI prototype, these rules override the skill where they differ:
+
+- Frontend only. Use dummy JSON for data, and never call the backend.
+- Link every screen, so the user can click through the navigation.
+- Make every button respond, even if it only changes the dummy data.
+
+Commit it to a throwaway branch named `proto/<n>_<two_or_three_words>`, push it, and tell the user the one command that runs it.
+
+For a UI question, offer v0 (v0.app) as an alternative. The user runs it by hand, so give them a prompt to paste into v0. Put the prompt in one fenced block, and include:
+
+- the screen or screens and what the user does on each
+- the dummy data, as a short JSON sample
+- the rules above
+- the project's stack: Next.js App Router, Tailwind and shadcn/ui
+- the look of the existing pages, from the code you read
+- a request for 2–3 clearly different variants
+
+Then wait for the user to share the v0 link, or describe what they picked.
+
+Once the user has picked a variant, record the branch or v0 link and the variant under **Prototype** in the design. Never merge the branch.
+
 ## 3b. Check your assumptions
 
 Before you draft, list everything you are assuming that the user has not explicitly confirmed. That includes facts you found in the code that shaped a decision, conservative defaults, and anything you decided without asking. Number each one, and give the evidence for any fact in one line.
@@ -70,7 +95,11 @@ Draft the section below and show it to the user. Revise it until they approve.
 **Acceptance criteria**
 - [ ] <observable behavior, written so a test can check it>
 
-**Verification** — tests to add, and any manual or visual check before review.
+**Prototype** — `proto/<n>_<words>` or the v0 link, variant <name>: what it settled. Omit this line if there was no prototype.
+
+**Verification** — the tests to add, and how the agent checks the result in a browser if the change is visible.
+
+**Human test** — the 2–5 things the user should try on the PR's preview before merging, as steps.
 
 **Out of scope** — what not to do, even if tempting.
 ```
