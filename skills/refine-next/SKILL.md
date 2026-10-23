@@ -33,7 +33,20 @@ Use the `grilling` skill. Steer the questions toward what an unattended implemen
 - which existing patterns, modules or conventions to follow, and which to avoid
 - how "done" is verified: tests that should exist, and any manual or visual check
 
+The decisions are the user's. Your recommendations are proposals until the user replies. These rules override `grilling`'s round format:
+
+- Ask at most 4 questions per round, the most consequential first. Hold the rest for later rounds.
+- Under each question, write `**My recommendation:** <answer>`. Never start it with "Yes", because that reads as if the question was already answered.
+- End every round with this line, then stop and wait for the reply:
+  `Reply per question — "1 yes", "2 no: <what instead>", or "all yes".`
+- Only treat a decision as settled after the user has answered it.
+
 If the work is bigger than one reviewable PR, say so and propose a split. Either narrow this issue and file the remainder as new Backlog issues, or stop and leave the user to run `/to-tickets`.
+
+## 3b. Check your assumptions
+
+Before you draft, list everything you are assuming that the user has not explicitly confirmed. That includes facts you found in the code that shaped a decision, conservative defaults, and anything you decided without asking. Number each one, and give the evidence for any fact in one line.
+End with `Anything wrong or missing? Reply "all good" or correct by number.`, then stop and wait. Don't draft until the user replies.
 
 ## 4. Write the design
 
