@@ -8,7 +8,9 @@ Only issues from the current repo are listed. This uses GraphQL directly because
   board list <status>         issues in that column, in board order (number, has-design, title)
   board next-ready            first Ready issue whose body has a "## Design" section
   board status <issue>        the issue's current column
-  board set <issue> <status>  move the issue to that column
+  board set <issue> <status> [--bottom]
+                              move the issue to that column; --bottom also puts it
+                              below every other card already in that column
 """
 import json
 import subprocess
@@ -46,6 +48,14 @@ mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
 }
 """
 
+MOVE_AFTER = """
+mutation($project: ID!, $item: ID!, $after: ID!) {
+  updateProjectV2ItemPosition(input: {projectId: $project, itemId: $item, afterId: $after}) {
+    clientMutationId
+  }
+}
+"""
+
 
 def run(*args):
     return subprocess.run(args, check=True, capture_output=True, text=True).stdout.strip()
@@ -70,12 +80,15 @@ def config():
 def load_board():
     cfg = config()
     repo = run("gh", "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner")
-    items, after, project = [], None, None
+    # every_item keeps all cards (any repo, closed ones too) in board order, so
+    # --bottom can find the true last card of a column.
+    items, every_item, after, project = [], [], None, None
     while True:
         project = graphql(ITEMS_QUERY, owner=cfg["owner"], number=int(cfg["project"]), after=after)[
             "repositoryOwner"]["projectV2"]
         page = project["items"]
         for node in page["nodes"]:
+            every_item.append((node["id"], (node.get("fieldValueByName") or {}).get("name")))
             issue = node.get("content") or {}
             if issue.get("repository", {}).get("nameWithOwner") != repo or issue.get("state") != "OPEN":
                 continue
@@ -89,9 +102,14 @@ def load_board():
         if not page["pageInfo"]["hasNextPage"]:
             break
         after = page["pageInfo"]["endCursor"]
+    project["every_item"] = every_item
     return project, items
 
 
+def move_to_bottom(project, item_id, status):
+    others = [i for i, s in project["every_item"] if (s or "").lower() == status.lower() and i != item_id]
+    if others:
+        graphql(MOVE_AFTER, project=project["id"], item=item_id, after=others[-1])
 def option_for(project, status):
     for option in project["field"]["options"]:
         if option["name"].lower() == status.lower():
@@ -127,11 +145,13 @@ def main(argv):
         sys.exit(1)
     elif command == "status" and len(rest) == 1:
         print(find(items, int(rest[0]))["status"])
-    elif command == "set" and len(rest) == 2:
+    elif command == "set" and len(rest) in (2, 3) and rest[2:] in ([], ["--bottom"]):
         item = find(items, int(rest[0]))
         graphql(SET_STATUS, project=project["id"], item=item["item_id"],
                 field=project["field"]["id"], option=option_for(project, rest[1]))
-        print(f"#{item['number']} → {rest[1]}")
+        if rest[2:] == ["--bottom"]:
+            move_to_bottom(project, item["item_id"], rest[1])
+        print(f"#{item['number']} → {rest[1]}{' (bottom)' if rest[2:] else ''}")
     else:
         sys.exit(__doc__.strip())
 

@@ -109,4 +109,4 @@ Write the body to a temp file and run `gh issue edit <n> --body-file <file>`, wh
 
 ## 5. Mark it Ready
 
-Run `board set <n> Ready`. Confirm in one line, and offer to refine the next one.
+Run `board set <n> Ready --bottom`, so it goes to the bottom of the Ready column and the issues refined earlier get built first. Confirm in one line, and offer to refine the next one.
