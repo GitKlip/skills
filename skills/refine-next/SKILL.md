@@ -1,7 +1,7 @@
 ---
 name: refine-next
 description: Refine the next Backlog issue on the project board into a Ready issue with an agreed design, by interviewing the user. Pass an issue number to refine that one instead.
-disable-model-invocation: true
+disable-model-invocation: false
 argument-hint: "[issue-number]"
 ---
 
