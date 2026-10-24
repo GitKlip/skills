@@ -24,6 +24,8 @@ If that file is missing, ask the user for the board owner and project number, an
 Read the issue and its comments (`gh issue view <n> --comments`), any issues it links to, the code it touches, and the project's agent docs (AGENTS.md or CLAUDE.md, plus any decision log they point to).
 Form a recommendation before asking anything. Never ask what the code or docs already answer.
 
+Decide whether the issue changes anything a user sees: a new or changed screen, component, layout, flow or visual state. If it does, say so in your first message, because step 3a then applies.
+
 ## 3. Interview
 
 Load the `grilling` and `domain-modeling` skills. That pair is what `/grill-with-docs` runs, and it can't be called from another skill because it is user-only.
@@ -48,9 +50,14 @@ The decisions are the user's. Your recommendations are proposals until the user 
 
 If the work is bigger than one reviewable PR, say so and propose a split. Either narrow this issue and file the remainder as new Backlog issues, or stop and leave the user to run `/to-tickets`.
 
-## 3a. Prototype, only when it would settle a question
+## 3a. Prototype every UI change
 
-Offer a prototype when the interview stalls on something the user has to see: what a screen should look like, or whether a state model feels right. Skip it for anything a sentence can decide. If the user accepts, load the `prototype` skill and use its UI or logic branch.
+If the issue changes anything a user sees, a prototype is required, not optional. Don't wait for the user to ask, and don't skip it because the interview went smoothly: an unattended implementer guesses the look far more often than the behavior.
+Build it once the first interview round has settled what the user sees and does, so the prototype shows decided behavior. Load the `prototype` skill and use its UI branch. In the same message, offer v0 as an alternative (below).
+
+Skip it only when the visible change is trivial: copy text, one label, one extra field in an existing form that already shows the pattern. When you skip it, say so in one line with the reason, and the user can overrule you.
+
+Outside UI, offer a logic prototype (the skill's logic branch) when the interview stalls on whether a state model feels right. Skip it for anything a sentence can decide.
 
 For a UI prototype, these rules override the skill where they differ:
 
@@ -95,7 +102,7 @@ Draft the section below and show it to the user. Revise it until they approve.
 **Acceptance criteria**
 - [ ] <observable behavior, written so a test can check it>
 
-**Prototype** — `proto/<n>_<words>` or the v0 link, variant <name>: what it settled. Omit this line if there was no prototype.
+**Prototype** — `proto/<n>_<words>` or the v0 link, variant <name>: what it settled. For a UI change with no prototype, write why it was skipped. Omit this line only when nothing a user sees changes.
 
 **Verification** — the tests to add, and how the agent checks the result in a browser if the change is visible.
 

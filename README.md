@@ -23,7 +23,7 @@ Each repo names its board in `.claude/board.json`: `{"owner": "<org-or-user>", "
    Area tags for each repo live under `tags` in `.claude/board.json`.
 1. **`/refine-next [issue]`**, in Claude Code, with me. It interviews me about the top Backlog issue, writes a
    `## Design` section into the issue, and moves it to Ready.
-   When I need to see a UI or a state model before deciding, it builds a throwaway prototype on a `proto/<n>_…` branch,
+   For any visible UI change it builds a throwaway prototype on a `proto/<n>_…` branch (and for a state model when I need to see it),
    or writes a prompt for me to paste into v0.
    The prototype is frontend only, with dummy data.
 2. **`build-ready-features [issue]`**, in a terminal, unattended. It is a Ralph loop: one fresh `claude -p`
