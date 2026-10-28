@@ -8,11 +8,17 @@
 #
 #   build-ready-features             build up to MAX_ISSUES issues
 #   build-ready-features 142         build just that issue (it must be Ready, with a design)
+#   build-ready-features --review 142
+#                                    only run the review pass on #142's open PR
 #
 # Settings (environment):
 #   MODEL=opus     (the orchestrating session; it hands well-specified tasks to sonnet subagents)
 #   MAX_ISSUES=3   MAX_TURNS=300   MAX_BUDGET_USD=25   PERMISSION_MODE=auto
 #   MAX_CONSECUTIVE_BLOCKED=2   (stop early: repeated blocks usually mean a setup problem)
+#   REVIEW=0       1 = after each PR opens, a fresh session reviews it in depth, simplifies,
+#                  fixes what it confirms and pushes, before the issue moves to In review.
+#                  The human still merges.
+#   REVIEW_MAX_TURNS=200   REVIEW_MAX_BUDGET_USD=15
 set -euo pipefail
 
 MODEL="${MODEL:-opus}"
@@ -21,10 +27,20 @@ MAX_TURNS="${MAX_TURNS:-300}"
 MAX_BUDGET_USD="${MAX_BUDGET_USD:-25}"
 PERMISSION_MODE="${PERMISSION_MODE:-auto}"
 MAX_CONSECUTIVE_BLOCKED="${MAX_CONSECUTIVE_BLOCKED:-2}"
+REVIEW="${REVIEW:-0}"
+REVIEW_MAX_TURNS="${REVIEW_MAX_TURNS:-200}"
+REVIEW_MAX_BUDGET_USD="${REVIEW_MAX_BUDGET_USD:-15}"
+
+review_only=""
+if [ "${1:-}" = "--review" ]; then
+  [ -n "${2:-}" ] || { echo "Usage: build-ready-features --review <issue>" >&2; exit 1; }
+  review_only="$2"
+fi
 
 here="$(cd "$(dirname "$(realpath "$0")")" && pwd)"
 board="$here/board"
 prompt_file="$here/../prompts/build-ready-feature.md"
+review_prompt_file="$here/../prompts/review-ready-feature.md"
 
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
@@ -35,10 +51,83 @@ default_branch="$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name
 if [ "$(git branch --show-current)" != "$default_branch" ]; then
   echo "Check out $default_branch first; each worktree branches from it." >&2; exit 1
 fi
-git pull --ff-only --quiet
+# Fetch, then fast-forward to the named ref. A plain `git pull` reads .git/FETCH_HEAD,
+# which an editor's background fetch can rewrite mid-pull ("Cannot fast-forward to
+# multiple branches").
+git fetch --quiet origin "$default_branch"
+git merge --ff-only --quiet "origin/$default_branch"
 
 log_dir="${XDG_STATE_HOME:-$HOME/.local/state}/build-ready-features/$(basename "$root")"
 mkdir -p "$log_dir"
+
+last_result() {
+  python3 -c '
+import json, sys
+last = ""
+for line in open(sys.argv[1]):
+    try: event = json.loads(line)
+    except ValueError: continue
+    if event.get("type") == "result":
+        last = (event.get("result") or event.get("subtype") or "").strip().splitlines()
+        last = last[-1] if last else ""
+print(last)' "$1"
+}
+
+# The build session names its branch <issue>_<two_or_three_words>, e.g. 168_llm_judge
+pr_for() {
+  gh pr list --state open --limit 100 --json url,headRefName \
+    -q "[.[] | select(.headRefName | startswith(\"${1}_\"))][0] | select(. != null) | \"\(.url)\t\(.headRefName)\""
+}
+
+# The worktree that has the branch checked out; made fresh if none does.
+worktree_for() {
+  local branch="$1" issue="$2" path
+  path="$(git worktree list --porcelain | awk -v b="refs/heads/$branch" \
+    '/^worktree /{w=substr($0, 10)} $0 == "branch " b {print w; exit}')"
+  if [ -z "$path" ]; then
+    path="$root/.claude/worktrees/review-$issue"
+    git fetch --quiet origin "$branch"
+    git worktree add --quiet "$path" "$branch" >&2
+    # Plain git worktrees don't get Claude Code's .worktreeinclude copies.
+    if [ -f .worktreeinclude ]; then
+      while IFS= read -r f; do
+        [ -n "$f" ] && [ -e "$f" ] && mkdir -p "$path/$(dirname "$f")" && cp "$f" "$path/$f"
+      done < .worktreeinclude
+    fi
+  fi
+  echo "$path"
+}
+
+review_pr() {
+  local issue="$1" pr="$2" branch="$3" path log result
+  path="$(worktree_for "$branch" "$issue")"
+  log="$log_dir/review-$issue-$(date +%Y%m%d-%H%M%S).jsonl"
+  echo "▶ review #$issue ($pr) — log: $log"
+  (cd "$path" && claude -p "Review PR $pr for issue #$issue." \
+    --model "$MODEL" \
+    --append-system-prompt-file "$review_prompt_file" \
+    --permission-mode "$PERMISSION_MODE" \
+    --max-turns "$REVIEW_MAX_TURNS" \
+    --max-budget-usd "$REVIEW_MAX_BUDGET_USD" \
+    --output-format stream-json --verbose) > "$log" 2>&1 || true
+  result="$(last_result "$log")"
+  case "$result" in
+    "RESULT: REVIEWED"*) echo "✔ review #$issue: ${result#RESULT: REVIEWED }" ;;
+    *)
+      echo "⚠ review #$issue did not finish: ${result:-no result}"
+      if ! gh pr view "$pr" --json comments -q '.comments[-1].body' | grep -q '^🤖 Review pass'; then
+        gh pr comment "$pr" --body "🤖 Review pass: incomplete. Last output: \`${result:-none}\`. Log on the machine that ran it: \`$log\`" >/dev/null
+      fi
+      ;;
+  esac
+}
+
+if [ -n "$review_only" ]; then
+  found="$(pr_for "$review_only")"
+  [ -n "$found" ] || { echo "#$review_only has no open PR on a ${review_only}_ branch." >&2; exit 1; }
+  review_pr "$review_only" "${found%%$'\t'*}" "${found#*$'\t'}"
+  exit 0
+fi
 
 next_issue() {
   if [ -n "${1:-}" ]; then
@@ -67,23 +156,14 @@ while [ "$built" -lt "$MAX_ISSUES" ]; do
     --output-format stream-json --verbose \
     > "$log" 2>&1 || true
 
-  result="$(python3 -c '
-import json, sys
-last = ""
-for line in open(sys.argv[1]):
-    try: event = json.loads(line)
-    except ValueError: continue
-    if event.get("type") == "result":
-        last = (event.get("result") or event.get("subtype") or "").strip().splitlines()
-        last = last[-1] if last else ""
-print(last)' "$log")"
+  result="$(last_result "$log")"
 
-  # The session names its branch <issue>_<two_or_three_words>, e.g. 168_llm_judge
-  pr="$(gh pr list --state open --limit 100 --json url,headRefName \
-    -q "[.[] | select(.headRefName | startswith(\"${issue}_\"))][0].url // empty")"
-  if [ -n "$pr" ]; then
-    "$board" set "$issue" "In review"
+  found="$(pr_for "$issue")"
+  if [ -n "$found" ]; then
+    pr="${found%%$'\t'*}"
     echo "✔ #$issue → $pr"
+    [ "$REVIEW" = "1" ] && review_pr "$issue" "$pr" "${found#*$'\t'}"
+    "$board" set "$issue" "In review"
     blocked_in_a_row=0
   else
     "$board" set "$issue" "AI Blocked"

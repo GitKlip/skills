@@ -36,6 +36,10 @@ Each repo names its board in `.claude/board.json`: `{"owner": "<org-or-user>", "
    Runs on `MODEL` (opus), which hands fully specified tasks to sonnet subagents.
    Limits: `MAX_ISSUES` (3), `MAX_TURNS` (300), `MAX_BUDGET_USD` (25 per issue), and it stops after 2 blocks in a row.
    Logs: `~/.local/state/build-ready-features/<repo>/`.
+   With `REVIEW=1`, each PR then gets a second, fresh session (`prompts/review-ready-feature.md`): an in-depth
+   correctness and security review against the design, fixes for the confirmed findings, a simplify pass, validation,
+   a push, and a `🤖 Review pass` comment on the PR. Only then does the issue move to In review. I still merge.
+   `build-ready-features --review <issue>` runs just that pass on an already-open PR.
 3. I follow the PR's "How to test" steps on the preview deploy, review it, and merge. Merging is the deploy. Worktrees stay in `.claude/worktrees/issue-<n>` until I remove them.
 
 `board --help` shows the board commands both of these use.
