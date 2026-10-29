@@ -8,9 +8,11 @@ Only issues from the current repo are listed. This uses GraphQL directly because
   board list <status>         issues in that column, in board order (number, has-design, title)
   board next-ready            first Ready issue whose body has a "## Design" section
   board status <issue>        the issue's current column
-  board set <issue> <status> [--bottom]
-                              move the issue to that column; --bottom also puts it
-                              below every other card already in that column
+  board pr <issue>            the issue's open PR, as "<url><TAB><branch>"; empty if none.
+                              Build branches are named <issue>_<words>, e.g. 168_llm_judge
+  board set <issue> <status> [--top|--bottom]
+                              move the issue to that column; --top / --bottom also put it
+                              above / below every other card already in that column
 """
 import json
 import subprocess
@@ -49,7 +51,7 @@ mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
 """
 
 MOVE_AFTER = """
-mutation($project: ID!, $item: ID!, $after: ID!) {
+mutation($project: ID!, $item: ID!, $after: ID) {
   updateProjectV2ItemPosition(input: {projectId: $project, itemId: $item, afterId: $after}) {
     clientMutationId
   }
@@ -106,10 +108,18 @@ def load_board():
     return project, items
 
 
-def move_to_bottom(project, item_id, status):
-    others = [i for i, s in project["every_item"] if (s or "").lower() == status.lower() and i != item_id]
-    if others:
-        graphql(MOVE_AFTER, project=project["id"], item=item_id, after=others[-1])
+def move_within_column(project, item_id, status, where):
+    order = [i for i, _ in project["every_item"] if i != item_id]
+    column = [i for i, s in project["every_item"] if (s or "").lower() == status.lower() and i != item_id]
+    if not column:
+        return
+    if where == "--bottom":
+        graphql(MOVE_AFTER, project=project["id"], item=item_id, after=column[-1])
+        return
+    # Top: just after the card that precedes the column's first card; no afterId = top of the board
+    index = order.index(column[0])
+    graphql(MOVE_AFTER, project=project["id"], item=item_id,
+            after=order[index - 1] if index > 0 else None)
 def option_for(project, status):
     for option in project["field"]["options"]:
         if option["name"].lower() == status.lower():
@@ -143,15 +153,22 @@ def main(argv):
                 print(item["number"])
                 return
         sys.exit(1)
+    elif command == "pr" and len(rest) == 1:
+        prs = json.loads(run("gh", "pr", "list", "--state", "open", "--limit", "200",
+                             "--json", "url,headRefName"))
+        for pr in prs:
+            if pr["headRefName"].startswith(f"{int(rest[0])}_"):
+                print(f"{pr['url']}\t{pr['headRefName']}")
+                return
     elif command == "status" and len(rest) == 1:
         print(find(items, int(rest[0]))["status"])
-    elif command == "set" and len(rest) in (2, 3) and rest[2:] in ([], ["--bottom"]):
+    elif command == "set" and len(rest) in (2, 3) and rest[2:] in ([], ["--top"], ["--bottom"]):
         item = find(items, int(rest[0]))
         graphql(SET_STATUS, project=project["id"], item=item["item_id"],
                 field=project["field"]["id"], option=option_for(project, rest[1]))
-        if rest[2:] == ["--bottom"]:
-            move_to_bottom(project, item["item_id"], rest[1])
-        print(f"#{item['number']} → {rest[1]}{' (bottom)' if rest[2:] else ''}")
+        if rest[2:]:
+            move_within_column(project, item["item_id"], rest[1], rest[2])
+        print(f"#{item['number']} → {rest[1]}{' (' + rest[2][2:] + ')' if rest[2:] else ''}")
     else:
         sys.exit(__doc__.strip())
 

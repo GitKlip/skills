@@ -36,13 +36,17 @@ Each repo names its board in `.claude/board.json`: `{"owner": "<org-or-user>", "
    Runs on `MODEL` (opus), which hands fully specified tasks to sonnet subagents.
    Limits: `MAX_ISSUES` (3), `MAX_TURNS` (300), `MAX_BUDGET_USD` (25 per issue), and it stops after 2 blocks in a row.
    Logs: `~/.local/state/build-ready-features/<repo>/`.
-   With `REVIEW=1`, each PR then gets a second, fresh session (`prompts/review-ready-feature.md`): an in-depth
-   correctness and security review against the design, fixes for the confirmed findings, a simplify pass, validation,
-   a push, and a `🤖 Review pass` comment on the PR. Only then does the issue move to In review. I still merge.
-   `build-ready-features --review <issue>` runs just that pass on an already-open PR.
-3. I follow the PR's "How to test" steps on the preview deploy, review it, and merge. Merging is the deploy. Worktrees stay in `.claude/worktrees/issue-<n>` until I remove them.
+3. **`/ship-story [issue]`**, in Claude Code, with me. It takes the top In review issue to merged.
+   Fresh subagents review it in parallel: correctness, architecture against the agent docs, security, acceptance
+   criteria and test integrity (opus for judgment, sonnet for systematic checks). It also runs the repo's UI
+   run-through and a time-boxed browser QA of what changed. It confirms each finding, fixes the serious ones test-first,
+   simplifies, and posts one `🚢 Ship report` comment on the PR. That comment is kept current and lets a re-run resume.
+   It brings me only design, product and scope questions, plus at most two proposed lessons for the build loop.
+   It merges (squash) only when I type "merge", then watches the production deploy and smoke run. A failure becomes a
+   top-of-Backlog bug and a rollback offer. Finally it cleans up the worktree and branch, keeping `proto/` branches.
+   Repo-specific commands come from a `## Shipping` section in the repo's AGENTS.md.
 
-`board --help` shows the board commands both of these use.
+`board --help` shows the board commands these all use.
 
 ## Three kinds of skill
 
