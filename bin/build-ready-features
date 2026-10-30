@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Ralph loop: build each Ready issue that has a "## Design" section, one fresh
-# Claude Code session per issue, each in its own worktree, ending in a PR.
+# Claude Code session per issue, ending in a PR. Each session runs in the issue's
+# worktree (bin/issue-worktree), reusing the one /refine-next left with the design's
+# docs and prototype committed, or creating it.
 #
 # Run from the main checkout of a repo that has .claude/board.json.
 # The loop owns the board: In progress while building, then In review if a PR
@@ -26,6 +28,7 @@ MAX_CONSECUTIVE_BLOCKED="${MAX_CONSECUTIVE_BLOCKED:-2}"
 
 here="$(cd "$(dirname "$(realpath "$0")")" && pwd)"
 board="$here/board"
+issue_worktree="$here/issue-worktree"
 prompt_file="$here/../prompts/build-ready-feature.md"
 
 root="$(git rev-parse --show-toplevel)"
@@ -74,17 +77,24 @@ while [ "$built" -lt "$MAX_ISSUES" ]; do
   issue="$(next_issue "${1:-}")" || { echo "No Ready issue with a design left."; break; }
   log="$log_dir/issue-$issue-$(date +%Y%m%d-%H%M%S).jsonl"
   echo "▶ #$issue — log: $log"
+  wt="$("$issue_worktree" "$issue")" || { echo "Couldn't set up a worktree for #$issue." >&2; exit 1; }
+  if [ -n "$(git -C "$wt" status --porcelain)" ]; then
+    # Someone (maybe a refinement still in progress) has uncommitted work there.
+    "$board" set "$issue" "AI Blocked"
+    gh issue comment "$issue" --body "🤖 AI Blocked: the issue's worktree has uncommitted changes, so the build didn't start. Commit or discard them in \`$wt\`, then move the issue back to Ready." >/dev/null
+    echo "✖ #$issue blocked: uncommitted changes in $wt"
+    built=$((built + 1)); [ -n "${1:-}" ] && break; continue
+  fi
   "$board" set "$issue" "In progress"
 
-  claude -p "Implement issue #$issue." \
-    --worktree "issue-$issue" \
+  (cd "$wt" && claude -p "Implement issue #$issue." \
     --model "$MODEL" \
     --append-system-prompt-file "$prompt_file" \
     --permission-mode "$PERMISSION_MODE" \
     --max-turns "$MAX_TURNS" \
     --max-budget-usd "$MAX_BUDGET_USD" \
     --output-format stream-json --verbose \
-    > "$log" 2>&1 || true
+    > "$log" 2>&1) || true
 
   result="$(last_result "$log")"
 

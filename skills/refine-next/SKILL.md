@@ -19,6 +19,13 @@ If that file is missing, ask the user for the board owner and project number, an
 - If an issue number was passed, use it, whatever column it is in.
 - Otherwise run `board list Backlog`, and take the first issue. Show the next four too, in one line each, so the user can swap.
 
+Then move into the issue's worktree, and do all of this skill's work there:
+
+- Name the branch now: the issue number, an underscore, and 2–3 lowercase words naming the task's concept, joined by underscores (for #194 "Ways to make a character": `194_forge_doors`).
+- Run `issue-worktree <n> <branch>`. It prints the worktree's path, creating it if needed, or returns the existing one (in which case it keeps its branch name). `cd` there, and stay there.
+- Set the worktree up the way the agent docs say (dependencies, env file check).
+- Never edit the main checkout. The user may be working in it, or have another issue open in another worktree.
+
 ## 2. Build your own view first
 
 Read the issue and its comments (`gh issue view <n> --comments`), any issues it links to, the code it touches, and the project's agent docs (AGENTS.md or CLAUDE.md, plus any decision log they point to).
@@ -31,7 +38,7 @@ Decide whether the issue changes anything a user sees: a new or changed screen, 
 Load the `grilling` and `domain-modeling` skills. That pair is what `/grill-with-docs` runs, and it can't be called from another skill because it is user-only.
 `grilling` drives the interview. `domain-modeling` challenges fuzzy terms and records them as they are resolved: terms go in `GLOSSARY.md`, and the rare hard-to-reverse decision goes in an ADR.
 Follow the project's agent docs on where decisions and terms go and how ADRs are numbered and titled. Without such guidance, use `domain-modeling`'s defaults (`docs/adr/`, `GLOSSARY.md`).
-Record in the issue's design which ADRs this refinement created, so the implementer reads them. Tell the user which doc files you changed. They are left uncommitted.
+Record in the issue's design which ADRs this refinement created, so the implementer reads them. They are committed on the issue branch in step 5 and reach the default branch with the PR, so the user reviews them there.
 
 Steer the questions toward what an unattended implementer would otherwise have to guess:
 
@@ -65,9 +72,14 @@ For a UI prototype, these rules override the skill where they differ:
 - Link every screen, so the user can click through the navigation.
 - Make every button respond, even if it only changes the dummy data.
 
-Never commit a prototype, and never put it on a branch. Put it in the project's prototype folder, which its agent docs name (for example `src/app/prototype/<n>-<two_or_three_words>/`). That folder must be gitignored, excluded from lint and typecheck, and copied into new worktrees (for Claude Code, by `.worktreeinclude`), so the unattended implementer can still open it.
+Put it in the project's prototype folder, which its agent docs name (for example `src/app/prototype/<n>-<two_or_three_words>/`), in the issue's worktree. It is committed on the issue branch, so the implementer and reviewers can open it from any checkout, and the implementer deletes it before opening the PR. It never goes on the default branch. The folder must be excluded from lint, typecheck and format checks, so it never fails validation.
 If the agent docs name no such folder, propose one to the user, then set it up and document it in the agent docs before building.
-Tell the user the one command that runs it and the URL to open.
+Run the dev server on the port the agent docs give for this worktree, so it doesn't collide with another worktree's. Start it yourself, check the page loads, then give the user, in one fenced block they can copy:
+
+- the command that runs it, with the worktree path (e.g. `cd <worktree>/src && npm run dev:next -- -p 3194`)
+- the URL to open, including each variant (e.g. `http://localhost:3194/prototype/194-forge-doors?variant=A`)
+
+Give the same block again whenever the prototype changes or the server restarts.
 
 For a UI question, offer v0 (v0.app) as an alternative. The user runs it by hand, so give them a prompt to paste into v0. Put the prompt in one fenced block, and include:
 
@@ -80,7 +92,7 @@ For a UI question, offer v0 (v0.app) as an alternative. The user runs it by hand
 
 Then wait for the user to share the v0 link, or describe what they picked.
 
-Once the user has picked a variant, record the prototype's folder or the v0 link and the variant under **Prototype** in the design. Because the folder exists only on this machine, also describe the chosen layout in words there, so the design still reads without it. Fold any changes the user asked for into the prototype first.
+Once the user has picked a variant, fold any changes they asked for into the prototype. Then save a screenshot of each screen of the chosen variant in the prototype folder, under `screenshots/`, so a reader can see it on GitHub without running it. Record the folder or the v0 link and the variant under **Prototype** in the design, with how to run it and the URL to open, and describe the chosen layout in words too, so the design reads on its own.
 
 ## 3b. Check your assumptions
 
@@ -104,7 +116,7 @@ Draft the section below and show it to the user. Revise it until they approve.
 **Acceptance criteria**
 - [ ] <observable behavior, written so a test can check it>
 
-**Prototype** — the prototype folder (e.g. `src/app/prototype/<n>-<words>/`) or the v0 link, variant <name>: what it settled and the chosen layout in words. For a UI change with no prototype, write why it was skipped. Omit this line only when nothing a user sees changes.
+**Prototype** — the prototype folder, linked pinned to the commit (`https://github.com/<repo>/tree/<sha>/<folder>`), or the v0 link; variant <name>. Run: `<command>`, then open `<URL>`. What it settled and the chosen layout in words. For a UI change with no prototype, write why it was skipped. Omit this line only when nothing a user sees changes.
 
 **Verification** — the tests to add, and how the agent checks the result in a browser if the change is visible.
 
@@ -116,6 +128,8 @@ Draft the section below and show it to the user. Revise it until they approve.
 Keep the existing issue body. Replace an existing `## Design` section if there is one, otherwise append it.
 Write the body to a temp file and run `gh issue edit <n> --body-file <file>`, which avoids shell-quoting problems.
 
-## 5. Mark it Ready
+## 5. Commit, push, mark it Ready
 
-Run `board set <n> Ready --bottom`, so it goes to the bottom of the Ready column and the issues refined earlier get built first. Confirm in one line, and offer to refine the next one.
+1. In the issue's worktree, commit the doc changes and the prototype on the issue branch, as separate commits, and push the branch (`git push -u origin <branch>`). Run the project's format command on the changed docs first. If the commit hook runs the full validation, `--no-verify` is fine for these commits, because they hold no product code. Stop the dev server, and leave nothing uncommitted (restore files the dev server rewrote): the build loop won't start in a dirty worktree.
+2. If the design links the prototype, put the pushed commit's SHA in that link, then update the issue body again. Then tell the user the GitHub link, plus the run command and URL from step 3a.
+3. Run `board set <n> Ready --bottom`, so it goes to the bottom of the Ready column and the issues refined earlier get built first. Confirm in one line, and offer to refine the next one.

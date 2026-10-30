@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# Print the path of an issue's worktree, creating it if needed.
+# One issue keeps one worktree and one branch (<n>_<words>) from refinement to merge,
+# so refine-next, build-ready-features and ship-story all pick up where the last one stopped.
+#
+#   issue-worktree 194                    find or create; a new branch is named issue-194
+#   issue-worktree 194 194_forge_doors    a new branch gets this name (must start with 194_)
+#
+# Finds, in order: a worktree whose branch starts with <n>_ (or is issue-<n>), a local
+# branch <n>_*, a remote branch origin/<n>_*. Otherwise branches from origin/<default>.
+# A new worktree goes in <main checkout>/.claude/worktrees/issue-<n>, and gets the main
+# checkout's .worktreeinclude entries copied in (plain paths only, no globs).
+# Prints the path on stdout; everything else goes to stderr.
+set -euo pipefail
+
+n="${1:?usage: issue-worktree <issue> [branch-name]}"
+want="${2:-}"
+case "$n" in *[!0-9]*) echo "issue must be a number: $n" >&2; exit 2 ;; esac
+if [ -n "$want" ] && [[ "$want" != "${n}_"* ]]; then
+  echo "branch name must start with ${n}_: $want" >&2; exit 2
+fi
+
+main="$(git worktree list --porcelain | awk '/^worktree /{print $2; exit}')"
+cd "$main"
+
+matches() { grep -E "^(${n}_|issue-${n}$)" || true; }
+
+# 1. An existing worktree for the issue
+existing="$(git worktree list --porcelain | awk '
+  /^worktree /{path=$2} /^branch /{sub("refs/heads/","",$2); print $2 "\t" path}' \
+  | awk -F'\t' -v n="$n" '$1 ~ "^" n "_" || $1 == "issue-" n {print $2}')"
+if [ -n "$existing" ]; then
+  if [ "$(printf '%s\n' "$existing" | wc -l)" -gt 1 ]; then
+    echo "more than one worktree for #$n:" >&2; printf '%s\n' "$existing" >&2; exit 1
+  fi
+  printf '%s\n' "$existing"; exit 0
+fi
+
+path="$main/.claude/worktrees/issue-$n"
+if [ -e "$path" ]; then
+  echo "$path exists but is not a worktree for #$n; move it aside first" >&2; exit 1
+fi
+
+default="$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')"
+default="${default:-main}"
+git fetch --quiet origin
+
+local_b="$(git for-each-ref --format='%(refname:short)' refs/heads | matches)"
+remote_b="$(git for-each-ref --format='%(refname:short)' refs/remotes/origin | sed 's#^origin/##' | matches)"
+too_many() { echo "more than one $1 branch for #$n: $(echo $2)" >&2; exit 1; }
+
+mkdir -p "$(dirname "$path")"
+if [ -n "$local_b" ]; then
+  [ "$(printf '%s\n' "$local_b" | wc -l)" -gt 1 ] && too_many local "$local_b"
+  git worktree add --quiet "$path" "$local_b" >&2
+elif [ -n "$remote_b" ]; then
+  [ "$(printf '%s\n' "$remote_b" | wc -l)" -gt 1 ] && too_many remote "$remote_b"
+  git worktree add --quiet --track -b "$remote_b" "$path" "origin/$remote_b" >&2
+else
+  git worktree add --quiet --no-track -b "${want:-issue-$n}" "$path" "origin/$default" >&2
+fi
+
+if [ -f "$main/.worktreeinclude" ]; then
+  while IFS= read -r entry || [ -n "$entry" ]; do
+    entry="${entry%/}"
+    case "$entry" in ''|'#'*) continue ;; esac
+    if [ -e "$main/$entry" ] && [ ! -e "$path/$entry" ]; then
+      mkdir -p "$(dirname "$path/$entry")"
+      cp -R "$main/$entry" "$path/$entry"
+    fi
+  done < "$main/.worktreeinclude"
+fi
+
+echo "created $path" >&2
+printf '%s\n' "$path"

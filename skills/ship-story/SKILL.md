@@ -25,7 +25,7 @@ Repo-specific facts (commands, the UI run-through, risk areas, production checks
 
 - If a number was passed, use it. Otherwise run `board list "In review"`, take the first, and show the next few in one line each so the user can swap.
 - `board pr <n>` gives the PR URL and branch. If there's no open PR, say so and stop.
-- Work in the worktree that has the branch checked out (`git worktree list`). If there is none, create `.claude/worktrees/issue-<n>` from the branch, and follow the agent docs for setting up a worktree (env files, dependencies). Then `git pull --ff-only` there.
+- Work in the issue's worktree: `issue-worktree <n>` prints its path, creating it from the PR's branch if this machine has none. `cd` there and stay there; never edit the main checkout. Follow the agent docs for setting up a worktree (env files, dependencies). Then `git pull --ff-only` there.
 - Read the issue and its `## Design` (`gh issue view <n> --comments`), the PR and its comments (`gh pr view <url> --comments`), the ADRs the design names, and the `## Shipping` section.
 
 **Resume.** Look for an earlier report comment on the PR, marked `<!-- ship-story -->`. It records the commit it checked and which checks ran. Skip any check already recorded for the current head commit, and say which ones you skipped.
@@ -131,7 +131,7 @@ Update the report after each round.
 
 Before offering the merge, bring the branch up to date with the default branch by **merging it in** (never rebase, since that would need a force-push):
 
-- Resolve mechanical conflicts yourself: lockfiles, generated files, import lists, the system map. For a conflict in logic, show the user both sides with a recommendation, and wait.
+- Resolve mechanical conflicts yourself: lockfiles, generated files, import lists, the system map. If the PR adds an ADR whose number the default branch already uses, renumber it, following the agent docs. For a conflict in logic, show the user both sides with a recommendation, and wait.
 - If the default branch moved, validate again, run the UI run-through again, and push.
 
 The gate is clear only when all of these are true:
@@ -140,6 +140,7 @@ The gate is clear only when all of these are true:
 - The UI run-through passed, or the user did it by hand.
 - No serious finding is open, and no question is unanswered.
 - Every acceptance criterion has evidence.
+- The PR contains no prototype folder (the agent docs name it). If the build left one, delete it in its own commit.
 - Every review thread and bot comment is answered.
 - Schema safety passed, if it ran.
 
@@ -151,5 +152,5 @@ On "merge", squash-merge with the PR title as the subject and `Closes #<n>` in t
 
 - Watch the production deploy and the post-deploy smoke run that the `## Shipping` section names, and report the result.
 - **If either fails**, file a bug issue linked to this one with the `create-story` skill, put it at the top of Backlog (`board set <bug> Backlog --top`), and offer the user a rollback with the exact steps. Don't roll back yourself.
-- **Clean up**, with the `finishing-a-development-branch` skill's safety rules: remove the PR's worktree, local branch and remote branch, if GitHub didn't already delete it. Then delete the issue's prototype folder from the main checkout, if the agent docs name one and it exists (it is gitignored, so nothing else removes it). Keep any older `proto/<n>_…` branch.
+- **Clean up**, with the `finishing-a-development-branch` skill's safety rules: remove the PR's worktree, local branch and remote branch, if GitHub didn't already delete it. The prototype went with the branch, and the design's link to it still works.
 - Update the report's status for the last time, and confirm in one line. Offer to ship the next In review issue.
