@@ -7,7 +7,7 @@ argument-hint: "[issue-number]"
 
 # Ship story
 
-Take one issue from **In review** to merged. `build-ready-features` built it unattended and reviewed its own work. This skill gives it fresh eyes, exercises it in a real browser, fixes what is confirmed, and brings the user only the decisions that need them.
+Take one issue from **In review** to merged. `build-ready-features` built it unattended and ran one quick review for bugs and missed acceptance criteria. Simplification and security review happen only here. This skill gives it fresh eyes, exercises it in a real browser, fixes what is confirmed, and brings the user only the decisions that need them.
 
 The user is here, but their time is the scarce part. Do the slow, mechanical work in subagents, and bring back short results and clear questions.
 

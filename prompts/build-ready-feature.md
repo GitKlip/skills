@@ -25,11 +25,7 @@ The loop moves the issue on the board. Never change board status yourself.
 3. Implement the plan with the `subagent-driven-development` skill. Every task follows the `tdd` skill: write a failing test, make it pass, then refactor.
 4. Validate: run the project's format check, lint, type-check, tests and production build, using the commands in its agent docs or package scripts. Everything must pass.
 5. If the change is visible in a UI, run the app and check it in a browser (Playwright), the way the project's docs describe. Walk through the design's **Human test** steps yourself. Note what you saw. This check is hit and miss, so it doesn't replace the human test.
-6. Polish:
-   - Run the `code-simplification` skill on the changed code.
-   - Run the `security-review` skill on the branch. If it isn't available, have the code reviewer cover security: auth and ownership checks, input validation, secrets, and injection.
-   - Run the `requesting-code-review` skill.
-   - Fix the real findings, then run step 4 again.
+6. Review once: run the `requesting-code-review` skill, asking only for bugs and missed acceptance criteria. Fix the serious findings, then run step 4 again. Don't simplify or run a security review: `/ship-story` does both later, with fresh reviewers, before anything merges.
 7. If the branch has a prototype folder, delete it in its own commit (`git rm -r <folder>`), so the PR never ships it. The design's link to it keeps working.
    Finish with the `finishing-a-development-branch` skill, choosing "push and create a PR" without showing its menu.
    The PR title is the issue title followed by ` (task #<n>)`, for example `[CORE] LLM scene adjudication and grounding judge (task #168)`.

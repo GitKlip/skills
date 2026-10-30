@@ -35,7 +35,8 @@ different steps at once.
 2. **`build-ready-features [issue]`**, in a terminal, unattended. It is a Ralph loop: one fresh `claude -p`
    session per issue, in the issue's worktree. It plans in phases and builds with TDD and subagents.
    It validates with format, lint, types, tests and build, then checks UI changes in a browser.
-   It simplifies, runs a security review and a code review, and opens a PR with "How to test" steps.
+   It runs one quick code review for bugs and missed acceptance criteria, and opens a PR with "How to test" steps.
+   Simplification and the security review are left to `/ship-story`.
    Branches are `<issue>_<two_or_three_words>` (e.g. `168_llm_judge`),
    and PR titles are `<issue title> (task #<issue>)`. It deletes the prototype in the branch's last commit, so the PR never ships it.
    The script moves the issue to In review if a PR exists, otherwise to AI Blocked.

@@ -21,8 +21,5 @@ install obra/superpowers \
 install mattpocock/skills \
   diagnosing-bugs grill-with-docs grilling domain-modeling tdd to-tickets prototype
 
-install addyosmani/agent-skills \
-  code-simplification
-
 # Not installable on its own: garrytan/gstack office-hours calls ~20 gstack/bin/*
 # helpers and needs the full gstack setup (https://github.com/garrytan/gstack).
