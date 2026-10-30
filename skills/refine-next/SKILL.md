@@ -65,7 +65,9 @@ For a UI prototype, these rules override the skill where they differ:
 - Link every screen, so the user can click through the navigation.
 - Make every button respond, even if it only changes the dummy data.
 
-Commit it to a throwaway branch named `proto/<n>_<two_or_three_words>`, push it, and tell the user the one command that runs it.
+Never commit a prototype, and never put it on a branch. Put it in the project's prototype folder, which its agent docs name (for example `src/app/prototype/<n>-<two_or_three_words>/`). That folder must be gitignored, excluded from lint and typecheck, and copied into new worktrees (for Claude Code, by `.worktreeinclude`), so the unattended implementer can still open it.
+If the agent docs name no such folder, propose one to the user, then set it up and document it in the agent docs before building.
+Tell the user the one command that runs it and the URL to open.
 
 For a UI question, offer v0 (v0.app) as an alternative. The user runs it by hand, so give them a prompt to paste into v0. Put the prompt in one fenced block, and include:
 
@@ -78,7 +80,7 @@ For a UI question, offer v0 (v0.app) as an alternative. The user runs it by hand
 
 Then wait for the user to share the v0 link, or describe what they picked.
 
-Once the user has picked a variant, record the branch or v0 link and the variant under **Prototype** in the design. Never merge the branch.
+Once the user has picked a variant, record the prototype's folder or the v0 link and the variant under **Prototype** in the design. Because the folder exists only on this machine, also describe the chosen layout in words there, so the design still reads without it. Fold any changes the user asked for into the prototype first.
 
 ## 3b. Check your assumptions
 
@@ -102,7 +104,7 @@ Draft the section below and show it to the user. Revise it until they approve.
 **Acceptance criteria**
 - [ ] <observable behavior, written so a test can check it>
 
-**Prototype** — `proto/<n>_<words>` or the v0 link, variant <name>: what it settled. For a UI change with no prototype, write why it was skipped. Omit this line only when nothing a user sees changes.
+**Prototype** — the prototype folder (e.g. `src/app/prototype/<n>-<words>/`) or the v0 link, variant <name>: what it settled and the chosen layout in words. For a UI change with no prototype, write why it was skipped. Omit this line only when nothing a user sees changes.
 
 **Verification** — the tests to add, and how the agent checks the result in a browser if the change is visible.
 

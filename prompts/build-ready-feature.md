@@ -18,7 +18,7 @@ The loop moves the issue on the board. Never change board status yourself.
 
 ## Steps
 
-1. Read the issue: `gh issue view <n> --comments`. If its design names a **Prototype**, read it. For a branch, run `git fetch origin <branch>` first. For a v0 link, fetch the page; if you can't open it, go by the design's description of it. The prototype shows how the result should look and behave. Its code is throwaway: rebuild it properly rather than copying it.
+1. Read the issue: `gh issue view <n> --comments`. If its design names a **Prototype**, read it. For a prototype folder, open it in this worktree (it is gitignored, so never commit it or copy its code); if it is missing, go by the design's description of it. For a v0 link, fetch the page; if you can't open it, go by the design's description of it. The prototype shows how the result should look and behave. Its code is throwaway: rebuild it properly rather than copying it.
 2. Write an implementation plan with the `writing-plans` skill. Split it into phases that can each be tested on their own, and map every acceptance criterion to the test that proves it. Skip the skill's human review step and its choice of execution approach, and go straight to step 3.
 3. Implement the plan with the `subagent-driven-development` skill. Every task follows the `tdd` skill: write a failing test, make it pass, then refactor.
 4. Validate: run the project's format check, lint, type-check, tests and production build, using the commands in its agent docs or package scripts. Everything must pass.

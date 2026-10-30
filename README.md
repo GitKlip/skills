@@ -23,7 +23,7 @@ Each repo names its board in `.claude/board.json`: `{"owner": "<org-or-user>", "
    Area tags for each repo live under `tags` in `.claude/board.json`.
 1. **`/refine-next [issue]`**, in Claude Code, with me. It interviews me about the top Backlog issue, writes a
    `## Design` section into the issue, and moves it to Ready.
-   For any visible UI change it builds a throwaway prototype on a `proto/<n>_…` branch (and for a state model when I need to see it),
+   For any visible UI change it builds a throwaway prototype (and for a state model when I need to see it) in a gitignored prototype folder, never committed,
    or writes a prompt for me to paste into v0.
    The prototype is frontend only, with dummy data.
 2. **`build-ready-features [issue]`**, in a terminal, unattended. It is a Ralph loop: one fresh `claude -p`
@@ -43,7 +43,7 @@ Each repo names its board in `.claude/board.json`: `{"owner": "<org-or-user>", "
    simplifies, and posts one `🚢 Ship report` comment on the PR. That comment is kept current and lets a re-run resume.
    It brings me only design, product and scope questions, plus at most two proposed lessons for the build loop.
    It merges (squash) only when I type "merge", then watches the production deploy and smoke run. A failure becomes a
-   top-of-Backlog bug and a rollback offer. Finally it cleans up the worktree and branch, keeping `proto/` branches.
+   top-of-Backlog bug and a rollback offer. Finally it cleans up the worktree and branch, and deletes the issue's prototype folder.
    Repo-specific commands come from a `## Shipping` section in the repo's AGENTS.md.
 
 `board --help` shows the board commands these all use.

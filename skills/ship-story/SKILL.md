@@ -151,5 +151,5 @@ On "merge", squash-merge with the PR title as the subject and `Closes #<n>` in t
 
 - Watch the production deploy and the post-deploy smoke run that the `## Shipping` section names, and report the result.
 - **If either fails**, file a bug issue linked to this one with the `create-story` skill, put it at the top of Backlog (`board set <bug> Backlog --top`), and offer the user a rollback with the exact steps. Don't roll back yourself.
-- **Clean up**, with the `finishing-a-development-branch` skill's safety rules: remove the PR's worktree, local branch and remote branch, if GitHub didn't already delete it. Keep any `proto/<n>_…` prototype branch, which is the record of what the design settled.
+- **Clean up**, with the `finishing-a-development-branch` skill's safety rules: remove the PR's worktree, local branch and remote branch, if GitHub didn't already delete it. Then delete the issue's prototype folder from the main checkout, if the agent docs name one and it exists (it is gitignored, so nothing else removes it). Keep any older `proto/<n>_…` branch.
 - Update the report's status for the last time, and confirm in one line. Offer to ship the next In review issue.
