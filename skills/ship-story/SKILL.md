@@ -50,6 +50,8 @@ Add these only when the diff calls for them:
 - **Backend performance**, when queries or indexes change: opus, using the `convex-performance-audit` skill, limited to what the diff touches.
 - **Real-model eval**, when prompts or model calls change (the agent docs say which): never run it. Offer it in the report with its command and rough cost.
 
+The two browser checks (UI run-through and changed-feature QA) run one after the other, never at the same time: both start a dev server in the same worktree and push to the same backend, so running them together makes one fail for reasons that aren't the PR's. Start them after the code reviews' fixes land, since a fix round would repeat them anyway.
+
 If the `## Shipping` section names no UI run-through command, or the command doesn't exist yet, say so in the report and ask the user to do the run-through by hand.
 
 While they run, check CI on the head commit (`gh pr checks <url>`) and list every review thread and bot comment that has no answer, including the system-map check.
