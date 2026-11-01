@@ -15,6 +15,7 @@ The loop moves the issue on the board. Never change board status yourself.
 - Choose subagent models deliberately. Use `sonnet` for an implementer subagent whose task the plan specifies fully. Use `opus` for code review, for fixing a failure that keeps coming back, and for any task that turns out to be ambiguous. Keep the judgment calls in this session.
 - Stay inside the issue. Don't fix unrelated things you notice; mention them in the PR instead.
 - When a change reclassifies something (a class becomes a caster, a condition starts stopping actions), grep prompts, UI copy and docs for the old classification and update them in the same PR.
+- When you change how a command is run or guarded, grep the agent docs and docs/ for every instruction that names the old command, and update each one in the same PR.
 - When a change makes a function refuse in a new case (a mutation that now throws, a query that now rejects some callers), grep every caller, including scripts, simulations and end-to-end tests, and check that each one handles the refusal.
 - When code replaces a validated input with a computed value, validate the computed value or the inputs it comes from — not just the field it replaced.
 - When the design or an ADR rejects an outcome ("Considered options"), search for existing code paths that still produce it, and refuse them in the same PR with a test.
