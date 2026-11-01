@@ -17,6 +17,7 @@ The loop moves the issue on the board. Never change board status yourself.
 - When a change reclassifies something (a class becomes a caster, a condition starts stopping actions), grep prompts, UI copy and docs for the old classification and update them in the same PR.
 - When a change makes a function refuse in a new case (a mutation that now throws, a query that now rejects some callers), grep every caller, including scripts, simulations and end-to-end tests, and check that each one handles the refusal.
 - When code replaces a validated input with a computed value, validate the computed value or the inputs it comes from — not just the field it replaced.
+- When the design or an ADR rejects an outcome ("Considered options"), search for existing code paths that still produce it, and refuse them in the same PR with a test.
 - Never merge, never push to the default branch, and never force-push.
 - Put throwaway files (one-off browser-check scripts, screenshots) in the scratch folder the project's agent docs name, and delete them when you're done. If the docs name none, put them outside the repo. A scratch file anywhere else can fail the pre-commit hook's format or lint check even when git ignores it, and then every commit fails.
 - Your run ends the moment you end your turn, and a turn that ends "waiting for X" is reported as blocked. So run the browser check and other long steps in the foreground, never as a background agent or background command, and never end your turn while anything you started is still running.
