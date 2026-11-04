@@ -28,17 +28,20 @@ different steps at once.
    Area tags for each repo live under `tags` in `.claude/board.json`.
 1. **`/refine-next [issue]`**, in Claude Code, with me. It interviews me about the top Backlog issue, writes a
    `## Design` section into the issue, and moves it to Ready.
-   For any visible UI change it builds a throwaway prototype (and for a state model when I need to see it) in the repo's prototype folder,
-   or writes a prompt for me to paste into v0. It commits the design's docs and the prototype on the issue branch and pushes it,
-   so the design can link the prototype pinned to a commit.
-   The prototype is frontend only, with dummy data.
+   For any visible UI change it builds a throwaway prototype with `/ui-prototype`: the app's real screens on a fake data layer,
+   with only the changed parts swapped per variant, next to a `now` variant of today's UI. It never calls the backend.
+   (For a state model I need to see, it uses the third-party `prototype` skill's logic branch.)
+   It commits the design's docs and the prototype on the issue branch and pushes it, so the design can link the prototype
+   pinned to a commit, and records which real file each copied screen came from.
 2. **`build-ready-features [issue]`**, in a terminal, unattended. It is a Ralph loop: one fresh `claude -p`
    session per issue, in the issue's worktree. It plans in phases and builds with TDD and subagents.
    It validates with format, lint, types, tests and build, then checks UI changes in a browser.
    It runs one quick code review for bugs and missed acceptance criteria, and opens a PR with "How to test" steps.
    Simplification and the security review are left to `/ship-story`.
    Branches are `<issue>_<two_or_three_words>` (e.g. `168_llm_judge`),
-   and PR titles are `<issue title> (task #<issue>)`. It deletes the prototype in the branch's last commit, so the PR never ships it.
+   and PR titles are `<issue title> (task #<issue>)`. It runs the prototype as its reference, diffs each copied screen against its
+   original to list the UI changes, and compares its build with the prototype screen by screen before deleting the prototype
+   in the branch's last commit, so the PR never ships it.
    The script moves the issue to In review if a PR exists, otherwise to AI Blocked.
    It only takes Ready issues that have a `## Design` section, and won't start in a worktree with uncommitted changes.
    Runs on `MODEL` (opus), which hands fully specified tasks to sonnet subagents.

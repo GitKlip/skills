@@ -6,7 +6,7 @@ The loop moves the issue on the board. Never change board status yourself.
 
 ## Rules
 
-- You are already in the issue's own git worktree. Refinement may have left commits on its branch: the design's docs (ADRs, glossary) and a prototype. Keep them, except the prototype, which you delete at the end (step 7).
+- You are already in the issue's own git worktree. Refinement may have left commits on its branch: the design's docs (ADRs, glossary) and a prototype. Keep them, except the prototype, which you delete at the end (step 8).
 - If the branch name doesn't start with the issue number and an underscore yet, rename it: the issue number, an underscore, and 2–3 lowercase words naming the task's concept, joined by underscores. For example, issue #168 "LLM scene adjudication and grounding judge" becomes `git branch -m 168_llm_judge`. The loop finds your PR by the `<n>_` prefix, so keep it exact. If it already has that prefix, keep its name.
 - If the default branch has moved on since the branch was cut, merge it in first (`git fetch origin && git merge origin/<default>`). Never rebase.
 - Follow the project's own agent docs (AGENTS.md, CLAUDE.md) wherever they differ from this prompt. That includes where plans go, how tests are run, what to check in a worktree, and any steps they require before finishing a branch.
@@ -25,19 +25,26 @@ The loop moves the issue on the board. Never change board status yourself.
 
 ## Steps
 
-1. Read the issue: `gh issue view <n> --comments`. If its design names a **Prototype**, read it. For a prototype folder, open it in this worktree, where refinement committed it, and look at its `screenshots/`; if it is missing, check out the folder from the commit the design links, or go by the design's description of it. For a v0 link, fetch the page; if you can't open it, go by the design's description of it. The prototype shows how the result should look and behave. Its code is throwaway: rebuild it properly rather than copying it.
+1. Read the issue: `gh issue view <n> --comments`. If its design names a **Prototype**, it is the reference for how the result looks and behaves. It is committed in this worktree; if the folder is missing, check it out from the commit the design links (`git checkout <sha> -- <folder>`).
+   - Run it with the design's command (on this worktree's port, per the agent docs) and open each URL the design lists, for the chosen variant and `now`. It runs on fake data, so it needs no backend. Look at its `screenshots/` too.
+   - For each copied file the design lists, diff the copy against its original at the recorded commit: `git show <sha>:<original> | diff -u - <copy>`. That diff is close to the exact list of UI changes to build. Put each change in the plan.
+   - If an original changed since that commit (`git diff <sha> HEAD -- <original>`), or the prototype doesn't render, refresh the copy before relying on it: `git show <sha>:<original> > <scratch>/base` then `git merge-file <copy> <scratch>/base <original>` applies the copy's changes onto today's original. Resolve any conflict by keeping the prototype's intent. If it still won't render, go by the diff, the screenshots and the design's description.
+   - Never copy prototype code into product code. Rebuild each change properly in the real files, with tests.
 2. Write an implementation plan with the `writing-plans` skill. Split it into phases that can each be tested on their own, and map every acceptance criterion to the test that proves it. Skip the skill's human review step and its choice of execution approach, and go straight to step 3.
 3. Implement the plan with the `subagent-driven-development` skill. Every task follows the `tdd` skill: write a failing test, make it pass, then refactor.
 4. Validate: run the project's format check, lint, type-check, tests and production build, using the commands in its agent docs or package scripts. Everything must pass.
 5. If the change is visible in a UI, run the app and check it in a browser (Playwright), the way the project's docs describe. Walk through the design's **Human test** steps yourself. Note what you saw. This check is hit and miss, so it doesn't replace the human test.
 6. Review once: run the `requesting-code-review` skill, asking only for bugs and missed acceptance criteria. Fix the serious findings, then run step 4 again. Don't simplify or run a security review: `/ship-story` does both later, with fresh reviewers, before anything merges.
-7. If the branch has a prototype folder, delete it in its own commit (`git rm -r <folder>`), so the PR never ships it. The design's link to it keeps working.
+7. If the design names a prototype, compare your build with it before deleting it. The prototype's `now` variant mounts the real components, so it now shows your build on the same fake data. For each screen and phase the design lists, open `?variant=now` and the chosen variant side by side, at the viewport the screen is used at, with `?panel=hidden`. If your build reads data the fake doesn't answer yet, or a screen takes a new prop, update the prototype's fake or page to match.
+   Screenshot both into the scratch folder and compare them screen by screen. Fix every difference the design doesn't explain, run step 4 again, and compare again. List the differences you kept, with why, for the PR body.
+8. If the branch has a prototype folder, delete it in its own commit (`git rm -r <folder>`), so the PR never ships it. The design's link to it keeps working.
    Finish with the `finishing-a-development-branch` skill, choosing "push and create a PR" without showing its menu.
    The PR title is the issue title followed by ` (task #<n>)`, for example `[CORE] LLM scene adjudication and grounding judge (task #168)`.
    The PR body must have:
    - `Closes #<n>`
    - a summary of what changed
    - test evidence: the validation commands you ran and their result, plus what the browser check showed
+   - **Prototype comparison**, if the design named a prototype: each screen and state compared, and every difference from the prototype with its reason, or "none"
    - **How to test**: the design's Human test steps, adjusted to what was actually built, for the human to run on the preview deploy
    - Decisions made without a human
    - anything left undone

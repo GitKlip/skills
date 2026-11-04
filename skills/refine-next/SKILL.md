@@ -60,39 +60,22 @@ If the work is bigger than one reviewable PR, say so and propose a split. Either
 ## 3a. Prototype every UI change
 
 If the issue changes anything a user sees, a prototype is required, not optional. Don't wait for the user to ask, and don't skip it because the interview went smoothly: an unattended implementer guesses the look far more often than the behavior.
-Build it once the first interview round has settled what the user sees and does, so the prototype shows decided behavior. Load the `prototype` skill and use its UI branch. In the same message, offer v0 as an alternative (below).
+Build it once the first interview round has settled what the user sees and does, so the prototype shows decided behavior. Load the `ui-prototype` skill and follow it. It builds the prototype from the app's real screens on fake data, with a `now` variant next to each new one, so the user judges the design inside the app and not as a separate mockup.
 
 Skip it only when the visible change is trivial: copy text, one label, one extra field in an existing form that already shows the pattern. When you skip it, say so in one line with the reason, and the user can overrule you.
 
-Outside UI, offer a logic prototype (the skill's logic branch) when the interview stalls on whether a state model feels right. Skip it for anything a sentence can decide.
+Outside UI, offer a logic prototype (the `prototype` skill's logic branch) when the interview stalls on whether a state model feels right. Skip it for anything a sentence can decide.
 
-For a UI prototype, these rules override the skill where they differ:
+Build it in the issue's worktree, in the prototype folder the agent docs name. It is committed on the issue branch, so the implementer and reviewers can open it from any checkout, and the implementer deletes it before opening the PR. It never goes on the default branch.
 
-- Frontend only. Use dummy JSON for data, and never call the backend.
-- Link every screen, so the user can click through the navigation.
-- Make every button respond, even if it only changes the dummy data.
+Only for a brand-new screen with no existing parent, you may also offer v0 (v0.app). The user runs it by hand, so give them a prompt to paste into v0, in one fenced block, with: the screens and what the user does on each, the dummy data as a short JSON sample, the project's stack and component library, the look of the existing pages from the code you read, and a request for 2–3 clearly different variants. Then wait for the v0 link, and rebuild the chosen one with `ui-prototype` on the app's components before recording it.
 
-Put it in the project's prototype folder, which its agent docs name (for example `src/app/prototype/<n>-<two_or_three_words>/`), in the issue's worktree. It is committed on the issue branch, so the implementer and reviewers can open it from any checkout, and the implementer deletes it before opening the PR. It never goes on the default branch. The folder must be excluded from lint, typecheck and format checks, so it never fails validation.
-If the agent docs name no such folder, propose one to the user, then set it up and document it in the agent docs before building.
-Run the dev server on the port the agent docs give for this worktree, so it doesn't collide with another worktree's. Start it yourself, check the page loads, then give the user, in one fenced block they can copy:
+Once the user has picked a variant, `ui-prototype` takes the screenshots. Record under **Prototype** in the design:
 
-- the command that runs it, with the worktree path (e.g. `cd <worktree>/src && npm run dev:next -- -p 3194`)
-- the URL to open, including each variant (e.g. `http://localhost:3194/prototype/194-forge-doors?variant=A`)
-
-Give the same block again whenever the prototype changes or the server restarts.
-
-For a UI question, offer v0 (v0.app) as an alternative. The user runs it by hand, so give them a prompt to paste into v0. Put the prompt in one fenced block, and include:
-
-- the screen or screens and what the user does on each
-- the dummy data, as a short JSON sample
-- the rules above
-- the project's stack: Next.js App Router, Tailwind and shadcn/ui
-- the look of the existing pages, from the code you read
-- a request for 2–3 clearly different variants
-
-Then wait for the user to share the v0 link, or describe what they picked.
-
-Once the user has picked a variant, fold any changes they asked for into the prototype. Then save a screenshot of each screen of the chosen variant in the prototype folder, under `screenshots/`, so a reader can see it on GitHub without running it. Record the folder or the v0 link and the variant under **Prototype** in the design, with how to run it and the URL to open, and describe the chosen layout in words too, so the design reads on its own.
+- the folder, linked pinned to a commit, and the chosen variant
+- how to run it and the URL of each screen and starting state, for the chosen variant and `now`
+- each copied file, the real file it came from, and the commit it was copied from
+- the chosen layout in words, so the design reads on its own
 
 ## 3b. Check your assumptions
 
@@ -116,7 +99,7 @@ Draft the section below and show it to the user. Revise it until they approve.
 **Acceptance criteria**
 - [ ] <observable behavior, written so a test can check it>
 
-**Prototype** — the prototype folder, linked pinned to the commit (`https://github.com/<repo>/tree/<sha>/<folder>`), or the v0 link; variant <name>. Run: `<command>`, then open `<URL>`. What it settled and the chosen layout in words. For a UI change with no prototype, write why it was skipped. Omit this line only when nothing a user sees changes.
+**Prototype** — the prototype folder, linked pinned to the commit (`https://github.com/<repo>/tree/<sha>/<folder>`); variant <name>. Run: `<command>`, then open these URLs (chosen variant and `now`): `<URL per screen and phase>`. Copies: `<copy>` ← `<original>` @ `<sha>`, one per line. What it settled and the chosen layout in words. For a UI change with no prototype, write why it was skipped. Omit this line only when nothing a user sees changes.
 
 **Verification** — the tests to add, and how the agent checks the result in a browser if the change is visible.
 
@@ -130,6 +113,8 @@ Write the body to a temp file and run `gh issue edit <n> --body-file <file>`, wh
 
 ## 5. Commit, push, mark it Ready
 
-1. In the issue's worktree, commit the doc changes and the prototype on the issue branch, as separate commits, and push the branch (`git push -u origin <branch>`). Run the project's format command on the changed docs first. If the commit hook runs the full validation, `--no-verify` is fine for these commits, because they hold no product code. Stop the dev server, and leave nothing uncommitted (restore files the dev server rewrote): the build loop won't start in a dirty worktree.
-2. If the design links the prototype, put the pushed commit's SHA in that link, then update the issue body again. Then tell the user the GitHub link, plus the run command and URL from step 3a.
-3. Run `board set <n> Ready --bottom`, so it goes to the bottom of the Ready column and the issues refined earlier get built first. Confirm in one line, and offer to refine the next one.
+1. In the issue's worktree, commit the doc changes and the prototype on the issue branch, as separate commits. Run the project's format command on the changed docs first. If the commit hook runs the full validation, `--no-verify` is fine for these commits, because they hold no product code.
+2. Before pushing, check the agent docs for what a push triggers (a preview deploy, a backend deploy). If they say a push deploys anything shared, follow what they say, and tell the user before you push. Then push the branch (`git push -u origin <branch>`).
+3. Stop the dev server you started (kill its process; don't leave it running in the background). Restore every file it rewrote, the way the agent docs say (for example `git checkout <file>`), and check `git status` is clean: the build loop won't start in a dirty worktree.
+4. If the design links the prototype, put the pushed commit's SHA in that link, then update the issue body again. Then tell the user the GitHub link, plus the run command and URLs from step 3a.
+5. Run `board set <n> Ready --bottom`, so it goes to the bottom of the Ready column and the issues refined earlier get built first. Confirm in one line, and offer to refine the next one.

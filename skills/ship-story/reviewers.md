@@ -49,7 +49,7 @@ For each one, say whether the diff justifies it. Also check that each new test s
 
 Exercise what this PR changed, in a real browser, time-boxed to about 20 minutes. Run the app from the worktree the way the agent docs describe (local server, test accounts, sign-in helpers).
 
-1. Before touching the browser, write a short charter: the changed screens, what the user does on each, and the expected result of each step. Take it from the design's acceptance criteria, its **Human test** steps and the prototype variant, if one is named.
+1. Before touching the browser, write a short charter: the changed screens, what the user does on each, and the expected result of each step. Take it from the design's acceptance criteria, its **Human test** steps and, if it names a prototype, the chosen variant's screenshots (linked from the design, pinned to a commit) and the PR body's **Prototype comparison**. The prototype folder itself is gone from the branch by now. A difference the PR body explains is expected; one it doesn't is **differed**.
 2. Walk the charter. Then try the edge cases it suggests: empty states, a second user, a refresh mid-flow, a failure state the design describes.
 3. Report each step as **matched**, **differed** (what you saw), or **couldn't verify** (why). Note console errors and failed network requests. Save screenshots of anything that differed, and give their paths.
 
