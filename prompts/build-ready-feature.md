@@ -46,6 +46,7 @@ The loop moves the issue on the board. Never change board status yourself.
    - test evidence: the validation commands you ran and their result, plus what the browser check showed
    - **Prototype comparison**, if the design named a prototype: each screen and state compared, and every difference from the prototype with its reason, or "none"
    - **How to test**: the design's Human test steps, adjusted to what was actually built, for the human to run on the preview deploy
+   - **Pitfalls checked**: before opening the PR, re-read the agent docs' known pitfalls ("Common Pitfalls" and the Convex rules in AGENTS.md, or the equivalent). For each one the diff touches, one line saying how it is handled
    - Decisions made without a human
    - anything left undone
    Never deploy. Merging the PR is the human's deploy step.
