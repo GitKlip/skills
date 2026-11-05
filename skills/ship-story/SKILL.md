@@ -1,13 +1,13 @@
 ---
 name: ship-story
-description: Take an issue whose PR is In review to merged, with the user. Runs fresh reviews, a UI run-through and simplification, fixes what it confirms, posts a report on the PR, and merges only when the user says "merge". Pass an issue number to ship that one instead of the top of In review.
+description: Take an issue whose PR is In review to merged, with the user. Runs fresh reviews, a UI run-through and simplification, fixes what it confirms, posts a report on the PR, and merges only when the user says "merge". Pass an issue number to ship that one instead of the top of In review. With --prep (run by build-ready-features, unattended), it does the checks, fixes and report, then stops before any question or merge.
 disable-model-invocation: false
-argument-hint: "[issue-number]"
+argument-hint: "[issue-number] [--prep]"
 ---
 
 # Ship story
 
-Take one issue from **In review** to merged. `build-ready-features` built it unattended and ran one quick review for bugs and missed acceptance criteria. Simplification and security review happen only here. This skill gives it fresh eyes, exercises it in a real browser, fixes what is confirmed, and brings the user only the decisions that need them.
+Take one issue from **In review** to merged. `build-ready-features` built it unattended, with no code review of its own. Review, simplification and security review happen only here. This skill gives it fresh eyes, exercises it in a real browser, fixes what is confirmed, and brings the user only the decisions that need them.
 
 The user is here, but their time is the scarce part. Do the slow, mechanical work in subagents, and bring back short results and clear questions.
 
@@ -21,6 +21,23 @@ Repo-specific facts (commands, the UI run-through, risk areas, production checks
 - Don't widen the PR. Anything outside the issue becomes a follow-up issue, never part of this PR, unless the user says otherwise.
 - Never delete a worktree with uncommitted files. List them and ask instead.
 
+## Prep mode (`--prep`)
+
+`build-ready-features` runs this skill with the arguments `<n> --prep` in a fresh `claude -p` session, right after the build opened the PR. The point is that when the user arrives, the slow work is done and only their decisions are left.
+
+In prep mode:
+
+- Nobody is watching. Never ask a question or wait for input.
+- Run sections 1 to 5 only. Then stop. Never offer or do a merge, and skip sections 6 to 8.
+- Every question that needs the user goes into the report's **Needs your decision**, with your recommendation. Lessons go into **Lessons proposed** as `proposed`. Apply neither.
+- A fix that needs the user's call is a question, not a fix, exactly as in interactive mode.
+- Set the report's mode to `prep (unattended)` and its status to `Prepped: <n> decisions` or `Prepped: ready to merge`. An interactive run switches the mode to `with the user` when it takes over.
+- The loop owns the board. Never change board status.
+- Your run ends when you end your turn. Run every subagent and command in the foreground, and never end your turn while one is still running.
+- End your final message with exactly one line: `RESULT: PREPPED <report comment url>` or `RESULT: FAILED <one-line reason>`.
+
+When the user later runs `/ship-story <n>`, it finds the prep report through the resume rule below and goes straight to section 6.
+
 ## 1. Pick the issue and set up
 
 - If a number was passed, use it. Otherwise run `board list "In review"`, take the first, and show the next few in one line each so the user can swap.
@@ -28,7 +45,9 @@ Repo-specific facts (commands, the UI run-through, risk areas, production checks
 - Work in the issue's worktree: `issue-worktree <n>` prints its path, creating it from the PR's branch if this machine has none. `cd` there and stay there; never edit the main checkout. Follow the agent docs for setting up a worktree (env files, dependencies). Then `git pull --ff-only` there.
 - Read the issue and its `## Design` (`gh issue view <n> --comments`), the PR and its comments (`gh pr view <url> --comments`), the ADRs the design names, and the `## Shipping` section.
 
-**Resume.** Look for an earlier report comment on the PR, marked `<!-- ship-story -->`. It records the commit it checked and which checks ran. Skip any check already recorded for the current head commit, and say which ones you skipped.
+**Resume.** Look for an earlier report comment on the PR, marked `<!-- ship-story -->`. It records the commit it checked and which checks ran. Skip any check already recorded for the current head commit, and say which ones you skipped. Commits since the recorded one that only a bot made to docs (such as a system-map update) don't change the code, so treat the report as current through them.
+
+If every check is already recorded (usually because a prep run did them), skip sections 2 to 5, except: check CI on the head commit and list unanswered review threads and bot comments again, since those may have changed. Then go to section 6, starting with the questions already in the report.
 
 ## 2. Checks, in parallel
 
@@ -84,7 +103,9 @@ Post the report on the PR as soon as the checks are done, before asking the user
 
 **Checked commit:** <sha> · **Checks run:** <list> · **Skipped (already done for this commit):** <list or none>
 
-**Status:** <Blocked: n items | Ready to merge | Merged | Smoke failed>
+**Mode:** <prep (unattended) | with the user>
+
+**Status:** <Prepped: n decisions | Prepped: ready to merge | Blocked: n items | Ready to merge | Merged | Smoke failed>
 
 ### Needs your decision
 1. <question> — **My recommendation:** <answer>

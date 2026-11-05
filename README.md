@@ -36,16 +36,19 @@ different steps at once.
 2. **`build-ready-features [issue]`**, in a terminal, unattended. It is a Ralph loop: one fresh `claude -p`
    session per issue, in the issue's worktree. It plans in phases and builds with TDD and subagents.
    It validates with format, lint, types, tests and build, then checks UI changes in a browser.
-   It runs one quick code review for bugs and missed acceptance criteria, and opens a PR with "How to test" steps.
-   Simplification and the security review are left to `/ship-story`.
+   It opens a PR with "How to test" steps, without reviewing its own work.
+   Then a second fresh session runs `/ship-story <issue> --prep` on the PR: every ship-story check, fixes and
+   simplification, and the ship report, stopping before any question or merge. If prep fails, the PR still goes to
+   In review, with a comment saying so.
    Branches are `<issue>_<two_or_three_words>` (e.g. `168_llm_judge`),
    and PR titles are `<issue title> (task #<issue>)`. It runs the prototype as its reference, diffs each copied screen against its
    original to list the UI changes, and compares its build with the prototype screen by screen before deleting the prototype
    in the branch's last commit, so the PR never ships it.
-   The script moves the issue to In review if a PR exists, otherwise to AI Blocked.
+   The script moves the issue to In review once a PR exists and prep has run, otherwise to AI Blocked.
    It only takes Ready issues that have a `## Design` section, and won't start in a worktree with uncommitted changes.
    Runs on `MODEL` (opus), which hands fully specified tasks to sonnet subagents.
    Limits: `MAX_ISSUES` (3), `MAX_TURNS` (300), `MAX_BUDGET_USD` (25 per issue), and it stops after 2 blocks in a row.
+   The prep run has its own: `SHIP_MAX_TURNS` (200), `SHIP_MAX_BUDGET_USD` (15). `SHIP_PREP=0` skips it.
    Logs: `~/.local/state/build-ready-features/<repo>/`.
 3. **`/ship-story [issue]`**, in Claude Code, with me. It takes the top In review issue to merged.
    Fresh subagents review it in parallel: correctness, architecture against the agent docs, security, acceptance
@@ -55,6 +58,8 @@ different steps at once.
    It brings me only design, product and scope questions, plus at most two proposed lessons for the build loop.
    It merges (squash) only when I type "merge", then watches the production deploy and smoke run. A failure becomes a
    top-of-Backlog bug and a rollback offer. Finally it cleans up the worktree and branch.
+   After a prep run, it resumes from the prep report: it rechecks CI and open comments, then goes straight to the
+   questions and the merge.
    Repo-specific commands come from a `## Shipping` section in the repo's AGENTS.md.
 
 `board --help` shows the board commands these all use.

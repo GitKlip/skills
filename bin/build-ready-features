@@ -5,8 +5,10 @@
 # docs and prototype committed, or creating it.
 #
 # Run from the main checkout of a repo that has .claude/board.json.
-# The loop owns the board: In progress while building, then In review if a PR
-# exists for the branch, otherwise AI Blocked.
+# When a PR exists, a second fresh session runs `/ship-story <n> --prep` on it:
+# fresh reviews, fixes and a ship report, stopping before any question or merge.
+# The loop owns the board: In progress while building and prepping, then In review
+# if a PR exists for the branch (even if the prep run failed), otherwise AI Blocked.
 #
 #   build-ready-features             build up to MAX_ISSUES issues
 #   build-ready-features 142         build just that issue (it must be Ready, with a design)
@@ -15,8 +17,10 @@
 #   MODEL=opus     (the orchestrating session; it hands well-specified tasks to sonnet subagents)
 #   MAX_ISSUES=3   MAX_TURNS=300   MAX_BUDGET_USD=25   PERMISSION_MODE=auto
 #   MAX_CONSECUTIVE_BLOCKED=2   (stop early: repeated blocks usually mean a setup problem)
+#   SHIP_PREP=1   SHIP_MAX_TURNS=200   SHIP_MAX_BUDGET_USD=15   (the prep run; SHIP_PREP=0 skips it)
 #
-# Review and merge happen afterwards, with the human, in /ship-story.
+# Decisions and merge happen afterwards, with the human, in /ship-story, which
+# resumes from the prep run's report.
 set -euo pipefail
 
 MODEL="${MODEL:-opus}"
@@ -25,6 +29,9 @@ MAX_TURNS="${MAX_TURNS:-300}"
 MAX_BUDGET_USD="${MAX_BUDGET_USD:-25}"
 PERMISSION_MODE="${PERMISSION_MODE:-auto}"
 MAX_CONSECUTIVE_BLOCKED="${MAX_CONSECUTIVE_BLOCKED:-2}"
+SHIP_PREP="${SHIP_PREP:-1}"
+SHIP_MAX_TURNS="${SHIP_MAX_TURNS:-200}"
+SHIP_MAX_BUDGET_USD="${SHIP_MAX_BUDGET_USD:-15}"
 
 here="$(cd "$(dirname "$(realpath "$0")")" && pwd)"
 board="$here/board"
@@ -101,6 +108,24 @@ while [ "$built" -lt "$MAX_ISSUES" ]; do
   pr="$("$board" pr "$issue" | cut -f1)"
   if [ -n "$pr" ]; then
     echo "✔ #$issue → $pr"
+    if [ "$SHIP_PREP" = "1" ]; then
+      # A fresh session, so the reviewers don't share the builder's context.
+      ship_log="$log_dir/issue-$issue-ship-prep-$(date +%Y%m%d-%H%M%S).jsonl"
+      echo "  ↳ ship prep — log: $ship_log"
+      (cd "$wt" && claude -p "/ship-story $issue --prep" \
+        --model "$MODEL" \
+        --permission-mode "$PERMISSION_MODE" \
+        --max-turns "$SHIP_MAX_TURNS" \
+        --max-budget-usd "$SHIP_MAX_BUDGET_USD" \
+        --output-format stream-json --verbose \
+        > "$ship_log" 2>&1) || true
+      ship_result="$(last_result "$ship_log")"
+      echo "  ↳ ${ship_result:-ship prep: no result}"
+      case "$ship_result" in
+        "RESULT: PREPPED"*) ;;
+        *) gh pr comment "$pr" --body "🤖 Ship prep didn't finish: \`${ship_result:-no result}\`. \`/ship-story $issue\` will run the missing checks. Log on the machine that ran it: \`$ship_log\`" >/dev/null || true ;;
+      esac
+    fi
     "$board" set "$issue" "In review"
     blocked_in_a_row=0
   else
