@@ -18,6 +18,7 @@ The loop moves the issue on the board. Never change board status yourself.
 - When you change how a command is run or guarded, grep the agent docs and docs/ for every instruction that names the old command, and update each one in the same PR.
 - When a change makes a function refuse in a new case (a mutation that now throws, a query that now rejects some callers), grep every caller, including scripts, simulations and end-to-end tests, and check that each one handles the refusal.
 - When code replaces a validated input with a computed value, validate the computed value or the inputs it comes from — not just the field it replaced.
+- For any screen that offers an action (a button, a link), check it still works in every later state of the thing it acts on — e.g. a game that leaves the lobby — and test that state. #216's removed screen kept offering "Join again" after the game started, which led only to a refusal.
 - When the design or an ADR rejects an outcome ("Considered options"), search for existing code paths that still produce it, and refuse them in the same PR with a test.
 - Never merge, never push to the default branch, and never force-push.
 - Apart from the per-task reviews in `subagent-driven-development`, don't run a code review, simplify or run a security review. After your PR opens, the loop starts a fresh session that runs `/ship-story <n> --prep` on it: fresh reviewers check it, fix what they confirm and post a ship report before a human looks. Reviewing your own work here would repeat that work, less well.
