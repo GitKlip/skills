@@ -53,7 +53,7 @@ different steps at once.
 3. **`/ship-story [issue]`**, in Claude Code, with me. It takes the top In review issue to merged.
    Fresh subagents review it in parallel: correctness, architecture against the agent docs, security, acceptance
    criteria and test integrity (opus for judgment, sonnet for systematic checks). It also runs the repo's UI
-   run-through and a time-boxed browser QA of what changed. It confirms each finding, fixes the serious ones test-first,
+   run-through and a time-boxed browser QA of what changed. It confirms each finding, fixes the serious ones and the small, obvious ones test-first,
    simplifies, and posts one `🚢 Ship report` comment on the PR. That comment is kept current and lets a re-run resume.
    It brings me only design, product and scope questions, plus at most two proposed lessons for the build loop.
    It merges (squash) only when I type "merge", then watches the production deploy and smoke run. A failure becomes a

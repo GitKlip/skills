@@ -77,21 +77,26 @@ While they run, check CI on the head commit (`gh pr checks <url>`) and list ever
 
 ## 3. Sort the findings
 
-Read every finding yourself, against the code it points at. Keep only the ones you've confirmed are real, and note the dropped ones with a reason. Note which checks reported each finding, and keep that with it in the report: it is how the user learns which checks earn their cost. Rank the confirmed ones:
+Read every finding yourself, against the code it points at. Keep only the ones you've confirmed are real, and note the dropped ones with a reason. Note which checks reported each finding, and keep that with it in the report: it is how the user learns which checks earn their cost. Put each confirmed one in exactly one group:
 
-- **Serious**: a bug, a missed acceptance criterion, a security hole, a weakened test that hides a failure, or a broken architecture rule. These block the merge.
-- **Minor**: everything else. Listed, not fixed, unless the user says "fix".
+- **Serious**: a bug, a missed acceptance criterion, a security hole, a weakened test that hides a failure, or a broken architecture rule. These block the merge. Fix them.
+- **Small**: not serious, and the fix is small and obvious: it stays inside code this PR already changed, touches one or two files, and has one clear right answer. Fix them in the same round as the serious ones, without asking. The user wants these done, not listed.
+- **Larger**: not serious, but the fix is bigger, reaches code this PR didn't change, or could go more than one reasonable way. Don't fix it. Make it a question with the effort spelled out (files touched, whether it needs a test or a migration, roughly how many fix rounds) and a recommendation: do it now, file a follow-up, or skip.
+- **Out of scope**: belongs to other work. Offer it as a follow-up issue. Never fix it in this PR.
+- **Merge note**: not a code change, but something the user must know when merging or rolling back, such as "undoing this schema change breaks the deploy once rows use the new value". It goes under **Before you merge** in the report and in the merge offer, never into a list of findings to fix.
 
-Some findings need the user, because they're a design, product or scope call, or they conflict with the agreed design. Hold those as questions. Don't fix them.
+A finding that is a design, product or scope call, or conflicts with the agreed design, is a question whatever its size. Don't fix it.
 
 ## 4. Fix, simplify, validate
 
-1. Fix every confirmed serious finding that doesn't need the user. Work test-first: write a test that fails because of the bug, then fix it. Use a sonnet subagent when the fix is fully specified, and opus when it isn't.
+1. Fix every serious and small finding in one batch: give the full list to one fix subagent, not one per finding. Work test-first whenever a fix changes behavior: write a test that fails because of the problem, then fix it. Use sonnet when every fix is fully specified, and opus when any isn't. If a small fix breaks validation or turns out bigger than it looked, revert it and make it a larger finding instead.
 2. Simplify. Run the `simplify` skill on the PR's changed code only (sonnet). Behavior must not change.
 3. Validate locally with the project's validate command (see the agent docs) before each push, then push. CI on the new head commit is the final word.
 4. If the fixes touched UI code, run the UI run-through again.
 
 If a fix keeps failing, stop fixing it, revert your own change to it, and make it a question for the user.
+
+The user's answers in section 6 can add fixes (a larger finding they approve). Fix those the same way, in one batch, then validate and push.
 
 ## 5. Post the report
 
@@ -113,8 +118,12 @@ Post the report on the PR as soon as the checks are done, before asking the user
 ### Fixed
 - <finding> → <what changed, commit> · found by: <checks>
 
-### Minor (not fixed)
-- <finding> · found by: <checks>
+### Not fixed
+- <larger finding> — <effort> — asked as question <n> · found by: <checks>
+- <out-of-scope finding> — follow-up offered · found by: <checks>
+
+### Before you merge
+- <merge note, or none>
 
 ### Dropped findings
 - <finding> — <why it isn't real> · found by: <checks>
@@ -167,7 +176,7 @@ The gate is clear only when all of these are true:
 - Every review thread and bot comment is answered.
 - Schema safety passed, if it ran.
 
-Then offer the merge in one message: the gate results, the preview link, and the "couldn't verify" list, so the user can try those steps first if they want. Wait for "merge".
+Then offer the merge in one message: the gate results, the preview link, every **Before you merge** note, and the "couldn't verify" list, so the user can try those steps first if they want. Wait for "merge".
 
 On "merge", squash-merge with the PR title as the subject and `Closes #<n>` in the body (`gh pr merge <url> --squash`). Then run `board set <n> Done --bottom` for the issue and for every other issue the PR closes, so each lands at the bottom of the Done column. The board's own automation also sets Done when the PR merges, but it leaves the card wherever it was; running `board set` after it is safe.
 
