@@ -77,7 +77,7 @@ While they run, check CI on the head commit (`gh pr checks <url>`) and list ever
 
 ## 3. Sort the findings
 
-Read every finding yourself, against the code it points at. Keep only the ones you've confirmed are real, and note the dropped ones with a reason. Rank the confirmed ones:
+Read every finding yourself, against the code it points at. Keep only the ones you've confirmed are real, and note the dropped ones with a reason. Note which checks reported each finding, and keep that with it in the report: it is how the user learns which checks earn their cost. Rank the confirmed ones:
 
 - **Serious**: a bug, a missed acceptance criterion, a security hole, a weakened test that hides a failure, or a broken architecture rule. These block the merge.
 - **Minor**: everything else. Listed, not fixed, unless the user says "fix".
@@ -111,13 +111,13 @@ Post the report on the PR as soon as the checks are done, before asking the user
 1. <question> — **My recommendation:** <answer>
 
 ### Fixed
-- <finding> → <what changed, commit>
+- <finding> → <what changed, commit> · found by: <checks>
 
 ### Minor (not fixed)
-- <finding>
+- <finding> · found by: <checks>
 
 ### Dropped findings
-- <finding> — <why it isn't real>
+- <finding> — <why it isn't real> · found by: <checks>
 
 ### Acceptance criteria
 - [x] <criterion> — <test or evidence>
