@@ -7,7 +7,7 @@
 # Run from the main checkout of a repo that has .claude/board.json.
 # When a PR exists, a second fresh session runs `/ship-story <n> --prep` on it:
 # fresh reviews, fixes and a ship report, stopping before any question or merge.
-# The loop owns the board: In progress while building and prepping, then In review
+# The loop owns the board: In progress while building and prepping, then In review (bottom of the column)
 # if a PR exists for the branch (even if the prep run failed), otherwise AI Blocked.
 #
 #   build-ready-features             build up to MAX_ISSUES issues
@@ -126,7 +126,7 @@ while [ "$built" -lt "$MAX_ISSUES" ]; do
         *) gh pr comment "$pr" --body "🤖 Ship prep didn't finish: \`${ship_result:-no result}\`. \`/ship-story $issue\` will run the missing checks. Log on the machine that ran it: \`$ship_log\`" >/dev/null || true ;;
       esac
     fi
-    "$board" set "$issue" "In review"
+    "$board" set "$issue" "In review" --bottom
     blocked_in_a_row=0
   else
     "$board" set "$issue" "AI Blocked"

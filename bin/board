@@ -2,7 +2,8 @@
 """GitHub Projects board helper shared by /refine-next and build-ready-features.
 
 The board comes from .claude/board.json at the repo root: {"owner": "...", "project": 6}.
-Only issues from the current repo are listed. This uses GraphQL directly because
+Only issues from the current repo are used. list and next-ready skip closed
+issues; status and set also work on closed ones, so a merged issue can be moved to Done. This uses GraphQL directly because
 `gh project item-list` returned no items for a board that has them.
 
   board list <status>         issues in that column, in board order (number, has-design, title)
@@ -92,10 +93,11 @@ def load_board():
         for node in page["nodes"]:
             every_item.append((node["id"], (node.get("fieldValueByName") or {}).get("name")))
             issue = node.get("content") or {}
-            if issue.get("repository", {}).get("nameWithOwner") != repo or issue.get("state") != "OPEN":
+            if issue.get("repository", {}).get("nameWithOwner") != repo:
                 continue
             items.append({
                 "item_id": node["id"],
+                "open": issue.get("state") == "OPEN",
                 "status": (node.get("fieldValueByName") or {}).get("name"),
                 "number": issue["number"],
                 "title": issue["title"],
@@ -145,11 +147,11 @@ def main(argv):
     if command == "list" and len(rest) == 1:
         option_for(project, rest[0])  # validates the name
         for item in items:
-            if (item["status"] or "").lower() == rest[0].lower():
+            if item["open"] and (item["status"] or "").lower() == rest[0].lower():
                 print(f"{item['number']}\t{'design' if item['has_design'] else '-'}\t{item['title']}")
     elif command == "next-ready" and not rest:
         for item in items:
-            if (item["status"] or "").lower() == "ready" and item["has_design"]:
+            if item["open"] and (item["status"] or "").lower() == "ready" and item["has_design"]:
                 print(item["number"])
                 return
         sys.exit(1)
