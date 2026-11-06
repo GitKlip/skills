@@ -85,6 +85,8 @@ while [ "$built" -lt "$MAX_ISSUES" ]; do
   log="$log_dir/issue-$issue-$(date +%Y%m%d-%H%M%S).jsonl"
   echo "▶ #$issue — log: $log"
   wt="$("$issue_worktree" "$issue")" || { echo "Couldn't set up a worktree for #$issue." >&2; exit 1; }
+  # `next dev` rewrites next-env.d.ts; that is never real work, so undo it first.
+  git -C "$wt" checkout -- src/next-env.d.ts 2>/dev/null || true
   if [ -n "$(git -C "$wt" status --porcelain)" ]; then
     # Someone (maybe a refinement still in progress) has uncommitted work there.
     "$board" set "$issue" "AI Blocked"
