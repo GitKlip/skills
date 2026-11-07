@@ -178,7 +178,7 @@ The gate is clear only when all of these are true:
 
 Then offer the merge in one message: the gate results, the preview link, every **Before you merge** note, and the "couldn't verify" list, so the user can try those steps first if they want. Wait for "merge".
 
-On "merge", squash-merge with the PR title as the subject and `Closes #<n>` in the body (`gh pr merge <url> --squash`). Then run `board set <n> Done --bottom` for the issue and for every other issue the PR closes, so each lands at the bottom of the Done column. The board's own automation also sets Done when the PR merges, but it leaves the card wherever it was; running `board set` after it is safe.
+On "merge", squash-merge with the PR title as the subject and `Closes #<n>` in the body (`gh pr merge <url> --squash`). Then run `board set <n> Done --top` for the issue and for every other issue the PR closes, so each lands at the top of the Done column (newest first). The board's own automation also sets Done when the PR merges, but it leaves the card wherever it was; running `board set` after it is safe.
 
 ## 8. After the merge
 
