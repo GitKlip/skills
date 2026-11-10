@@ -18,7 +18,7 @@ Repo-specific facts (commands, the UI run-through, risk areas, production checks
 
 - **Never merge without the user typing "merge" in this session**, after you've shown the gate is clear. Never auto-merge, and never enable GitHub auto-merge.
 - Never force-push, never push to the default branch, never deploy, and never roll back production yourself. A rollback is offered, and the user does it.
-- Don't widen the PR. Anything outside the issue becomes a follow-up issue, never part of this PR, unless the user says otherwise.
+- Fix bugs as you go. A bug you find gets fixed in this PR, even when it's outside the issue or already on the default branch, unless the fix needs significant extra effort or brings real complexity or risk. Every follow-up issue is work that stops progress, so file one only for those, and only if the user agrees. New features and design changes are still never added to this PR.
 - Never delete a worktree with uncommitted files. List them and ask instead.
 
 ## Prep mode (`--prep`)
@@ -80,9 +80,9 @@ While they run, check CI on the head commit (`gh pr checks <url>`) and list ever
 Read every finding yourself, against the code it points at. Keep only the ones you've confirmed are real, and note the dropped ones with a reason. Note which checks reported each finding, and keep that with it in the report: it is how the user learns which checks earn their cost. Put each confirmed one in exactly one group:
 
 - **Serious**: a bug, a missed acceptance criterion, a security hole, a weakened test that hides a failure, or a broken architecture rule. These block the merge. Fix them.
-- **Small**: not serious, and the fix is small and obvious: it stays inside code this PR already changed, touches one or two files, and has one clear right answer. Fix them in the same round as the serious ones, without asking. The user wants these done, not listed.
-- **Larger**: not serious, but the fix is bigger, reaches code this PR didn't change, or could go more than one reasonable way. Don't fix it. Make it a question with the effort spelled out (files touched, whether it needs a test or a migration, roughly how many fix rounds) and a recommendation: do it now, file a follow-up, or skip.
-- **Out of scope**: belongs to other work. Offer it as a follow-up issue. Never fix it in this PR.
+- **Small**: not serious, and the fix is contained: a few files, one clear right answer, little risk. This includes bugs in code this PR didn't change and bugs the default branch already has. Fix them in the same round as the serious ones, without asking, each with a test, and list them under **Fixed**. The user wants these done, not listed. "The default branch does it too" is never a reason to leave a bug.
+- **Larger**: not serious, but the fix needs significant extra effort, brings real complexity or risk, or could go more than one reasonable way. Don't fix it. Make it a question with the effort spelled out (files touched, whether it needs a test or a migration, roughly how many fix rounds) and a recommendation: do it now, file a follow-up, or skip.
+- **Out of scope**: a new feature or design change that belongs to other work, not a bug. Offer it as a follow-up issue. Never build it in this PR.
 - **Merge note**: not a code change, but something the user must know when merging or rolling back, such as "undoing this schema change breaks the deploy once rows use the new value". It goes under **Before you merge** in the report and in the merge offer, never into a list of findings to fix.
 
 A finding that is a design, product or scope call, or conflicts with the agreed design, is a question whatever its size. Don't fix it.
@@ -153,9 +153,9 @@ Show the user a short summary: status, then the numbered questions. These rules 
 - Under each question, write `**My recommendation:** <answer>`.
 - End each round with: `Reply per question — "1 yes", "2 no: <what instead>", or "all yes".` Then wait.
 
-Out-of-scope work the user agrees to becomes a new Backlog issue, filed with the `create-story` skill.
+Out-of-scope work and larger findings the user agrees to file become new Backlog issues, filed with the `create-story` skill. Recommend fixing now over filing whenever the effort allows.
 
-**Lessons.** If this review caught something the build loop should have caught, propose at most two concrete changes as questions: an agent-docs pitfall, a guard test, or a line in the build prompt (`prompts/build-ready-feature.md` in the skills repo). Show the exact text. Apply only the ones the user approves.
+**Lessons.** Fix the process as you go, the same way as bugs. If this review caught something the build loop should have caught, or a skill, prompt or agent doc led an agent wrong (including the PR's "Process notes"), make the change: an agent-docs pitfall, a guard test, or a line in a skill or the build prompt (`prompts/build-ready-feature.md` in the skills repo). Keep each one to a few lines. Apply it, commit it, and show the user the exact text in the round's summary, so they can veto it. Ask first only when the change would reverse an existing rule or a user decision.
 
 Update the report after each round.
 

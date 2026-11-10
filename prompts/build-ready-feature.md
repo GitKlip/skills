@@ -13,7 +13,8 @@ The loop moves the issue on the board. Never change board status yourself.
 - The issue's `## Design` section is the agreed design. Build it. Don't redesign it.
   If it is silent or ambiguous on something, make the most conservative choice, and record it under "Decisions made without a human" in the PR.
 - Choose subagent models deliberately. Use `sonnet` for an implementer subagent whose task the plan specifies fully. Use `opus` for code review, for fixing a failure that keeps coming back, and for any task that turns out to be ambiguous. Keep the judgment calls in this session.
-- Stay inside the issue. Don't fix unrelated things you notice; mention them in the PR instead.
+- Build only what the issue asks for, but fix bugs as you go. A bug you notice along the way, even one outside the issue, gets fixed on this branch with a test and listed in the PR under "Also fixed", unless the fix needs significant extra effort or brings real complexity or risk. List only those in the PR, for the ship review to decide. Don't add features or design changes the issue didn't ask for.
+- If a skill, this prompt or the project's agent docs led you wrong or left you guessing, say so in the PR under "Process notes", with the exact change you'd make. The ship review applies it.
 - When a change reclassifies something (a class becomes a caster, a condition starts stopping actions), grep prompts, UI copy and docs for the old classification and update them in the same PR.
 - When you change how a command is run or guarded, grep the agent docs and docs/ for every instruction that names the old command, and update each one in the same PR.
 - When a change makes a function refuse in a new case (a mutation that now throws, a query that now rejects some callers), grep every caller, including scripts, simulations and end-to-end tests, and check that each one handles the refusal.
