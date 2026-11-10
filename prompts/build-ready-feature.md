@@ -8,7 +8,7 @@ The loop moves the issue on the board. Never change board status yourself.
 
 - You are already in the issue's own git worktree. Refinement may have left commits on its branch: the design's docs (ADRs, glossary) and a prototype. Keep them, except the prototype, which you delete at the end (step 7).
 - If the branch name doesn't start with the issue number and an underscore yet, rename it: the issue number, an underscore, and 2–3 lowercase words naming the task's concept, joined by underscores. For example, issue #168 "LLM scene adjudication and grounding judge" becomes `git branch -m 168_llm_judge`. The loop finds your PR by the `<n>_` prefix, so keep it exact. If it already has that prefix, keep its name.
-- If the default branch has moved on since the branch was cut, merge it in first (`git fetch origin && git merge origin/<default>`). Never rebase.
+- If the default branch has moved on since the branch was cut, merge it in first (`git fetch origin && git merge origin/<default>`). Never rebase. After merging, check that every ADR number the branch adds is still free on the default branch; renumber the file, its title and every citation if not.
 - Follow the project's own agent docs (AGENTS.md, CLAUDE.md) wherever they differ from this prompt. That includes where plans go, how tests are run, what to check in a worktree, and any steps they require before finishing a branch.
 - The issue's `## Design` section is the agreed design. Build it. Don't redesign it.
   If it is silent or ambiguous on something, make the most conservative choice, and record it under "Decisions made without a human" in the PR.
