@@ -50,6 +50,8 @@ different steps at once.
    Limits: `MAX_ISSUES` (3), `MAX_TURNS` (300), `MAX_BUDGET_USD` (25 per issue), and it stops after 2 blocks in a row.
    The prep run has its own: `SHIP_MAX_TURNS` (200), `SHIP_MAX_BUDGET_USD` (25). `SHIP_PREP=0` skips it.
    Logs: `~/.local/state/build-ready-features/<repo>/`.
+   **`/build-story <issue>`**, in Claude Code, runs it for that one issue in the background and reports the PR or the
+   block when it ends. The run stops if that session closes, so use a terminal for long or overnight runs.
 3. **`/ship-story [issue]`**, in Claude Code, with me. It takes the top In review issue to merged.
    Fresh subagents review it in parallel: correctness, architecture against the agent docs, security, acceptance
    criteria and test integrity (opus for judgment, sonnet for systematic checks). It also runs the repo's UI
