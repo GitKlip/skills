@@ -6,7 +6,7 @@ Each subagent reports only. It never edits files, commits, pushes or comments on
 Every brief shares this frame:
 
 > You are reviewing one PR before a human merges it. A different, unattended session built it, and you have none of its context, which is the point: judge the branch as it is.
-> Read the issue and its `## Design` (`gh issue view <n> --comments`), the PR (`gh pr view <url>`), and the full diff against the default branch (`git diff origin/<default>...HEAD` in the worktree). Follow the project's agent docs (AGENTS.md or CLAUDE.md).
+> Read the issue and its `## Design` (`gh issue view <n> --json title,body,comments --jq '.title, .body, (.comments[].body)'`), the PR (`gh pr view <url>`), and the full diff against the default branch (`git diff origin/<default>...HEAD` in the worktree). Follow the project's agent docs (AGENTS.md or CLAUDE.md).
 > Report each finding as: **severity** (serious or minor), **file:line**, **what is wrong**, **how it fails** (the concrete input or state, and the wrong result), and **fix size**: small (one or two files the PR already changed, one obvious fix) or larger (say why). Leave out anything you couldn't tie to a concrete failure. Say "no findings" if there are none. Keep it under 500 words.
 
 ## Architecture alignment (opus)

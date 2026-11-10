@@ -28,7 +28,7 @@ Then move into the issue's worktree, and do all of this skill's work there:
 
 ## 2. Build your own view first
 
-Read the issue and its comments (`gh issue view <n> --comments`), any issues it links to, the code it touches, and the project's agent docs (AGENTS.md or CLAUDE.md, plus any decision log they point to).
+Read the issue and its comments (`gh issue view <n> --json title,body,comments --jq '.title, .body, (.comments[].body)'`), any issues it links to, the code it touches, and the project's agent docs (AGENTS.md or CLAUDE.md, plus any decision log they point to).
 Form a recommendation before asking anything. Never ask what the code or docs already answer.
 
 Decide whether the issue changes anything a user sees: a new or changed screen, component, layout, flow or visual state. If it does, say so in your first message, because step 3a then applies.
