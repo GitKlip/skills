@@ -17,5 +17,5 @@ A thin wrapper around the `build-ready-features` command for one issue. The scri
 4. **When it exits, report the outcome first**, from the script's own lines:
    - `✔ #<n> → <PR url>` plus the `↳` ship-prep line: the PR link, whether prep finished (`RESULT: PREPPED`) or not, and that `/ship-story <n>` is next.
    - `✖ #<n> blocked: …`: the reason, and that the issue is now in AI Blocked with a comment.
-   - `#<n> is not Ready with a design`: say to run `/refine-next <n>` first.
+   - `#<n> is not Ready with a design`: say to run `/refine-story <n>` first.
    Then give the log path(s) from the `▶` and `↳ ship prep — log:` lines, written in full.

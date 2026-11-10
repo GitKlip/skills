@@ -1,6 +1,6 @@
 ---
 name: ui-prototype
-description: Build a throwaway UI prototype from the app's real screens on a fake data layer, with each design variant next to today's UI. Use when a UI change needs to be seen in a browser before it is built, or when refine-next asks for a UI prototype.
+description: Build a throwaway UI prototype from the app's real screens on a fake data layer, with each design variant next to today's UI. Use when a UI change needs to be seen in a browser before it is built, or when refine-story asks for a UI prototype.
 ---
 
 # UI prototype

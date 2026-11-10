@@ -6,14 +6,14 @@ description: File GitHub issues as "stories" on the repo's project board — a p
 # Create a story
 
 A story is a GitHub issue that anyone can understand in 30 seconds, followed by what an implementer needs.
-It lands on the project board in **Backlog**. `/refine-next` later adds the design and moves it to Ready.
+It lands on the project board in **Backlog**. `/refine-story` later adds the design and moves it to Ready.
 
 ## When to use
 
 | Use this skill | Not this skill |
 |---|---|
 | Filing a feature, a backlog item, or a bug worth real investigation | A quick bug note with an obvious fix: `gh issue create` is enough |
-| Turning a discussion or playtest feedback into an issue | Designing the solution: that's `/refine-next` |
+| Turning a discussion or playtest feedback into an issue | Designing the solution: that's `/refine-story` |
 | Importing a file or list of stories in dependency order | Splitting an agreed plan into build tickets: that's `/to-tickets` |
 
 ## The format

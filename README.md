@@ -26,7 +26,7 @@ different steps at once.
 0. **`/create-story`**, in Claude Code. Files an issue in Backlog: a plain-language top half (user story, intent,
    acceptance criteria), a `---` rule, then implementer Details. `story.py lint` enforces the format.
    Area tags for each repo live under `tags` in `.claude/board.json`.
-1. **`/refine-next [issue]`**, in Claude Code, with me. It interviews me about the top Backlog issue, writes a
+1. **`/refine-story [issue]`**, in Claude Code, with me. It interviews me about the top Backlog issue, writes a
    `## Design` section into the issue, and moves it to Ready.
    For any visible UI change it builds a throwaway prototype with `/ui-prototype`: the app's real screens on a fake data layer,
    with only the changed parts swapped per variant, next to a `now` variant of today's UI. It never calls the backend.

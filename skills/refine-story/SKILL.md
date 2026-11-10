@@ -1,11 +1,11 @@
 ---
-name: refine-next
+name: refine-story
 description: Refine the next Backlog issue on the project board into a Ready issue with an agreed design, by interviewing the user. Pass an issue number to refine that one instead.
 disable-model-invocation: false
 argument-hint: "[issue-number]"
 ---
 
-# Refine next
+# Refine story
 
 Turn one issue into something an unattended agent can build without asking anyone anything.
 The output is a `## Design` section in the issue body, and the issue moved to **Ready**.

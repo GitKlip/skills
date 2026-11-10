@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Ralph loop: build each Ready issue that has a "## Design" section, one fresh
 # Claude Code session per issue, ending in a PR. Each session runs in the issue's
-# worktree (bin/issue-worktree), reusing the one /refine-next left with the design's
+# worktree (bin/issue-worktree), reusing the one /refine-story left with the design's
 # docs and prototype committed, or creating it.
 #
 # Run from the main checkout of a repo that has .claude/board.json.
@@ -73,7 +73,7 @@ next_issue() {
   if [ -n "${1:-}" ]; then
     # Same bar as next-ready: in Ready and has a "## Design" section
     "$board" list Ready | awk -F'\t' -v n="$1" '$1 == n && $2 == "design" { print n; found = 1 } END { exit !found }' \
-      || { echo "#$1 is not Ready with a design; run /refine-next $1 first." >&2; return 1; }
+      || { echo "#$1 is not Ready with a design; run /refine-story $1 first." >&2; return 1; }
   else
     "$board" next-ready
   fi

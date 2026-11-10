@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Print the path of an issue's worktree, creating it if needed.
 # One issue keeps one worktree and one branch (<n>_<words>) from refinement to merge,
-# so refine-next, build-ready-features and ship-story all pick up where the last one stopped.
+# so refine-story, build-ready-features and ship-story all pick up where the last one stopped.
 #
 #   issue-worktree 194                    find or create; a new branch is named issue-194
 #   issue-worktree 194 194_forge_doors    a new branch gets this name (must start with 194_)

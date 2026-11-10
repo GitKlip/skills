@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""GitHub Projects board helper shared by /refine-next and build-ready-features.
+"""GitHub Projects board helper shared by /refine-story and build-ready-features.
 
 The board comes from .claude/board.json at the repo root: {"owner": "...", "project": 6}.
 Only issues from the current repo are used. list and next-ready skip closed
