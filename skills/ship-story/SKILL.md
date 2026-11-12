@@ -89,7 +89,7 @@ A finding that is a design, product or scope call, or conflicts with the agreed 
 
 ## 4. Fix, simplify, validate
 
-1. Fix every serious and small finding in one batch: give the full list to one fix subagent, not one per finding. Work test-first whenever a fix changes behavior: write a test that fails because of the problem, then fix it. Use sonnet when every fix is fully specified, and opus when any isn't. If a small fix breaks validation or turns out bigger than it looked, revert it and make it a larger finding instead.
+1. Fix every serious and small finding in one batch: give the full list to one fix subagent, not one per finding. Work test-first whenever a fix changes behavior: write a test that fails because of the problem, then fix it. Ask the fix subagent to show each new test failing before its fix, and to list those runs in its report. Use sonnet when every fix is fully specified, and opus when any isn't. If a small fix breaks validation or turns out bigger than it looked, revert it and make it a larger finding instead.
 2. Simplify. Run the `simplify` skill on the PR's changed code only (sonnet). Behavior must not change.
 3. Validate locally with the project's validate command (see the agent docs) before each push, then push. CI on the new head commit is the final word.
 4. If the fixes touched UI code, run the UI run-through again.
