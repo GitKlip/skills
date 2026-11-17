@@ -6,15 +6,15 @@ Each subagent reports only. It never edits files, commits, pushes or comments on
 Every brief shares this frame:
 
 > You are reviewing one PR before a human merges it. A different, unattended session built it, and you have none of its context, which is the point: judge the branch as it is.
-> Read the issue and its `## Design` (`gh issue view <n> --json title,body,comments --jq '.title, .body, (.comments[].body)'`), the PR (`gh pr view <url>`), and the full diff against the default branch (`git diff origin/<default>...HEAD` in the worktree). Follow the project's agent docs (AGENTS.md or CLAUDE.md).
+> Read the issue and its `## Design` (`gh issue view <n> --json title,body,comments --jq '.title, .body, (.comments[].body)'`), the PR (`gh pr view <url>`), and the full diff against the default branch (`git diff origin/<default>...HEAD` in the worktree). Follow the project's agent docs: the root AGENTS.md or CLAUDE.md, plus every AGENTS.md or CLAUDE.md in a folder above a file the diff changes (`git diff --name-only origin/<default>...HEAD`). Read those folder files yourself; your tools may not load them for you.
 > Report each finding as: **severity** (serious or minor), **file:line**, **what is wrong**, **how it fails** (the concrete input or state, and the wrong result), and **fix size**: small (one or two files the PR already changed, one obvious fix) or larger (say why). Leave out anything you couldn't tie to a concrete failure. Say "no findings" if there are none. Keep it under 500 words.
 
 ## Architecture alignment (opus)
 
 Check the diff against the project's own rules, not general taste:
 
-- Read the agent docs in full, plus every ADR the design names and every ADR the diff's area cites.
-- Go through the docs' list of known pitfalls, and for each one the diff touches, check that it was handled. Name the pitfall in the finding.
+- Read the agent docs in full (the root file and the folder files above every changed file), plus every ADR the design names and every ADR the diff's area cites.
+- Go through the known pitfalls in all of those files, and for each one the diff touches, check that it was handled. Name the pitfall and the file it's in in the finding.
 - Check layer and module boundaries the docs define: what may import what, where logic of each kind belongs, and what must stay internal.
 - If the PR changes a convention, check that it updated the docs that state it. If it changes architecture, check the system map or equivalent the docs name.
 - If the PR adds a failure or degrade path, check where a human can see it.

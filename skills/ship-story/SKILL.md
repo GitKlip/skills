@@ -12,7 +12,7 @@ Take one issue from **In review** to merged. `build-ready-features` built it una
 The user is here, but their time is the scarce part. Do the slow, mechanical work in subagents, and bring back short results and clear questions.
 
 The board is read and changed with the `board` command (`board --help`), which reads `.claude/board.json`.
-Repo-specific facts (commands, the UI run-through, risk areas, production checks) come from the project's agent docs (AGENTS.md or CLAUDE.md), especially a `## Shipping` section. Those docs win wherever they differ from this skill.
+Repo-specific facts (commands, the UI run-through, risk areas, production checks) come from the project's agent docs (the root AGENTS.md or CLAUDE.md, plus the AGENTS.md or CLAUDE.md in every folder above a changed file), especially a `## Shipping` section or the doc it points to. Those docs win wherever they differ from this skill.
 
 ## Hard rules
 
@@ -43,7 +43,7 @@ When the user later runs `/ship-story <n>`, it finds the prep report through the
 - If a number was passed, use it. Otherwise run `board list "In review"`, take the first, and show the next few in one line each so the user can swap.
 - `board pr <n>` gives the PR URL and branch. If there's no open PR, say so and stop.
 - Work in the issue's worktree: `issue-worktree <n>` prints its path, creating it from the PR's branch if this machine has none. `cd` there and stay there; never edit the main checkout. Follow the agent docs for setting up a worktree (env files, dependencies). Then `git pull --ff-only` there.
-- Read the issue and its `## Design` (`gh issue view <n> --json title,body,comments --jq '.title, .body, (.comments[].body)'`), the PR and its comments (`gh pr view <url> --comments`), the ADRs the design names, and the `## Shipping` section.
+- Read the issue and its `## Design` (`gh issue view <n> --json title,body,comments --jq '.title, .body, (.comments[].body)'`), the PR and its comments (`gh pr view <url> --comments`), the ADRs the design names, and the `## Shipping` section (and the doc it points to, if any).
 
 **Resume.** Look for an earlier report comment on the PR, marked `<!-- ship-story -->`. It records the commit it checked and which checks ran. Skip any check already recorded for the current head commit, and say which ones you skipped. Commits since the recorded one that only a bot made to docs (such as a system-map update) don't change the code, so treat the report as current through them.
 
