@@ -1,0 +1,11 @@
+# Which GitHub account git uses, chosen by the repo's remote owner.
+# Included from ~/.gitconfig. Paths below are relative to this file.
+
+# Default, including GitKlip and Canyon50x repos
+[include]
+	path = gitklip.gitconfig
+
+[includeIf "hasconfig:remote.*.url:https://github.com/LegendCraftStudiosLLC/**"]
+	path = lcs.gitconfig
+[includeIf "hasconfig:remote.*.url:https://github.com/erikcornelsen-lcs/**"]
+	path = lcs.gitconfig

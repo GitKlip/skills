@@ -1,0 +1,6 @@
+[user]
+	email = erik.cornelsen@legendcraftstudios.com
+# The empty helper drops any earlier helper; the token comes from gh's keychain entry for erikcornelsen-lcs.
+[credential "https://github.com"]
+	helper =
+	helper = "!f() { test \"$1\" = get && echo username=erikcornelsen-lcs && echo \"password=$(/opt/homebrew/bin/gh auth token --user erikcornelsen-lcs)\"; }; f"

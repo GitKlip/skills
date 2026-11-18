@@ -33,5 +33,5 @@ link_into "$HOME/.local/bin" "${bins[@]}"
 
 case ":$PATH:" in
   *":$HOME/.local/bin:"*) ;;
-  *) echo "Add ~/.local/bin to PATH:  echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.zshrc" ;;
+  *) echo "Add ~/.local/bin to PATH:  echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.zprofile  (after brew shellenv, so bin/gh wins)" ;;
 esac

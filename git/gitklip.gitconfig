@@ -1,0 +1,6 @@
+[user]
+	email = erik.cornelsen@gmail.com
+# The empty helper drops any earlier helper; the token comes from gh's keychain entry for GitKlip.
+[credential "https://github.com"]
+	helper =
+	helper = "!f() { test \"$1\" = get && echo username=GitKlip && echo \"password=$(/opt/homebrew/bin/gh auth token --user GitKlip)\"; }; f"

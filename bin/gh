@@ -1,0 +1,6 @@
+#!/bin/sh
+# Run gh as the GitHub account git would use here (see git/accounts.gitconfig).
+case "$1" in auth) exec /opt/homebrew/bin/gh "$@" ;; esac
+tok=$(printf 'protocol=https\nhost=github.com\n\n' | GIT_TERMINAL_PROMPT=0 git credential fill 2>/dev/null | sed -n 's/^password=//p')
+[ -n "$tok" ] && export GH_TOKEN="$tok"
+exec /opt/homebrew/bin/gh "$@"

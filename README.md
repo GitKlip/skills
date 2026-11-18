@@ -9,6 +9,7 @@ Stack-specific skills (Clerk, Convex, Vercel…) stay in each project, not here.
 skills/<name>/SKILL.md   # my own skills, plus forks I've customized
 bin/                     # commands, linked into ~/.local/bin
 prompts/                 # prompts the bin/ commands hand to Claude
+git/                     # which GitHub account git and gh use, per repo owner
 third-party.sh           # the third-party skills I use, as install commands
 link.sh                  # links skills/* and bin/* for live editing
 ```
@@ -83,8 +84,47 @@ cd ~/Documents/projects/skills
 ./third-party.sh   # third-party picks
 ```
 
+Then set up the GitHub accounts (below): log in to both, add the include to `~/.gitconfig`,
+and put `export PATH="$HOME/.local/bin:$PATH"` in `~/.zprofile` after the `brew shellenv` line.
+
 On a machine where I won't edit skills, I can skip the clone and install a snapshot:
 `npx skills add GitKlip/skills -g -s '*'`
+
+## GitHub accounts
+
+I use two GitHub accounts, and every repo picks one from its remote's owner:
+
+| Remote owner | Account | Commit email |
+|---|---|---|
+| `LegendCraftStudiosLLC`, `erikcornelsen-lcs` | erikcornelsen-lcs | erik.cornelsen@legendcraftstudios.com |
+| anything else (GitKlip, Canyon50x, others' repos) | GitKlip | erik.cornelsen@gmail.com |
+
+- **git:** `~/.gitconfig` includes `git/accounts.gitconfig`. Its `includeIf "hasconfig:remote.*.url:…"` rules load
+  `git/lcs.gitconfig` or `git/gitklip.gitconfig`. Each sets `user.email` and a credential helper that asks
+  `gh auth token --user <account>` for that account's token, so tokens stay in the keychain. The rules match the URL
+  given to `git clone`, so clones pick the right account too. VS Code and other GUI git clients follow them as well.
+- **gh:** gh has one active account per host and no per-repo setting, only `GH_TOKEN`. `bin/gh` wraps it: it asks
+  `git credential fill` for this repo's token and passes it as `GH_TOKEN` to that one gh process, so gh always matches
+  git. `gh auth …` skips the wrapper. It needs `~/.local/bin` ahead of `/opt/homebrew/bin` on PATH.
+
+Setup on a new machine:
+
+```bash
+gh auth login              # once as GitKlip
+gh auth login              # once as erikcornelsen-lcs
+git config --global include.path ~/Documents/projects/skills/git/accounts.gitconfig
+```
+
+Remove any `[credential "https://github.com"]` section from `~/.gitconfig`. (`gh auth setup-git` adds one.)
+The include replaces it.
+To route another owner, add an `includeIf` line to `git/accounts.gitconfig`.
+
+Check where a repo lands: `git config user.email` and `gh api user -q .login`.
+
+Limits:
+- `gh repo clone` run outside a repo uses GitKlip. Use `git clone`, which follows the rules.
+- `gh … -R owner/repo` uses the current folder's account.
+- The rules only match `https://github.com/…` remotes. SSH remotes use SSH keys instead.
 
 ## Rules that keep this small
 
