@@ -33,7 +33,7 @@ In prep mode:
 - A fix that needs the user's call is a question, not a fix, exactly as in interactive mode.
 - Set the report's mode to `prep (unattended)` and its status to `Prepped: <n> decisions` or `Prepped: ready to merge`. An interactive run switches the mode to `with the user` when it takes over.
 - The loop owns the board. Never change board status.
-- Your run ends when you end your turn. Run every subagent and command in the foreground, and never end your turn while one is still running.
+- Your run ends when you end your turn. Run every subagent and command in the foreground, and never end your turn while one is still running. The one exception is the story eval (section 2), which runs as a background command you wait on with foreground `until` loops.
 - End your final message with exactly one line: `RESULT: PREPPED <report comment url>` or `RESULT: FAILED <one-line reason>`.
 
 When the user later runs `/ship-story <n>`, it finds the prep report through the resume rule below and goes straight to section 6.
@@ -67,7 +67,7 @@ Add these only when the diff calls for them:
 
 - **Schema safety**, when the schema file changes: opus, using the `convex-migration-helper` skill. Check the change against the shape of the production data. It blocks the merge if it needs a migration plan.
 - **Backend performance**, when queries or indexes change: opus, using the `convex-performance-audit` skill, limited to what the diff touches.
-- **Real-model eval**, when prompts or model calls change (the agent docs say which): never run it. Offer it in the report with its command and rough cost.
+- **Story eval** (real models, costs money), when the diff touches a path the agent docs list as story-affecting: run it as they describe (reference, runs, compare, budget). Otherwise record "skipped: no story-affecting change". It runs in prep mode too. If the printed estimate is over the budget, don't run it; make it a question. A `worse` verdict is a question for the user, never a merge block on its own. Start it after the code reviews' fixes land, alongside the browser checks, so it measures the code that would merge; it uses its own in-memory backend, so it doesn't collide with them. Runs take hours, so start it as one background command and keep working; in prep mode, wait for it with foreground `until` loops before ending the turn.
 
 The two browser checks (UI run-through and changed-feature QA) run one after the other, never at the same time: both start a dev server in the same worktree and push to the same backend, so running them together makes one fail for reasons that aren't the PR's. Start them after the code reviews' fixes land, since a fix round would repeat them anyway.
 
@@ -136,8 +136,11 @@ Post the report on the PR as soon as the checks are done, before asking the user
 - Changed-feature QA: <what was checked, what was seen>
 - Couldn't verify: <steps a human should try on the preview, or none>
 
+### Story eval
+- <ran: reference, runs, cost, verdicts per rubric and code-counted number / skipped: reason>
+
 ### Offered, not run
-- <e.g. real-model eval: command, rough cost>
+- <anything a check would have run but didn't, with its command and rough cost>
 
 ### Lessons proposed
 - <change> — <applied / skipped>
