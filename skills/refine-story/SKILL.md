@@ -80,6 +80,7 @@ Once the user has picked a variant, `ui-prototype` takes the screenshots. Record
 ## 3b. Check your assumptions
 
 Before you draft, list everything you are assuming that the user has not explicitly confirmed. That includes facts you found in the code that shaped a decision, conservative defaults, and anything you decided without asking. Number each one, and give the evidence for any fact in one line.
+If the design spawns a child process of a script, one assumption must say whether the child inherits the parent's environment or loads its own, checked against CI, where `.env.local` doesn't exist (#313's child `--env-file=.env.local` would have died there).
 End with `Anything wrong or missing? Reply "all good" or correct by number.`, then stop and wait. Don't draft until the user replies.
 
 ## 4. Write the design
